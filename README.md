@@ -16,7 +16,7 @@ __RequestSender__
 * Handles HTTP request sending and retry logic
 * Collects performance metrics
 
-__PerformanceMonitor__
+__Monitoring Performance__
 * Records request start and end times
 * Calculates statistics (mean, median, P99, etc.)
 * Generates performance reports
@@ -25,7 +25,7 @@ __PerformanceMonitor__
 ```mermaid
 graph TB
     A[EventGenerator] --> B[Event Queue] --> C[RequestSender32 threads] --> D[HTTP Server]
-    C --> E[PerformanceMonitor]
+    C --> E[Monitoring Performance]
 ```
 
 ## Key Class Design
@@ -118,6 +118,8 @@ __Client 2: 32 Thread Test With Statistics using Spring Boot__
 ```
 
 __Client 2: Throughput Over Time Plot__
+![logo](./client-part2/throughput_chart.png)
+
 
 ### 3. Screenshot
 __Single Thread Test__
@@ -131,4 +133,6 @@ __Client 2: 32 Thread Test With Statistics__
 
 __Client 2: 32 Thread Test With Statistics using Spring Boot__
 
-__EC2__
+__EC2(Using Postman)__
+![logo](./images/EC2PostTest.png)
+

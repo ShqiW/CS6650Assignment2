@@ -17,7 +17,7 @@ Part 1 of the Ski Resort Management System client implementation, focusing on ef
 ### Setup Steps
 __1. Modify configuration__
 ```bash
-server.url=http://your-ec2-instance:8080/api/skiers
+server.url=http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
 thread.count=32
 request.count=200000
 ```
@@ -29,7 +29,11 @@ mvn clean package
 
 __3. run__
 ```bash
-java -jar target/client-part1.jar
+java -jar target/client-part1-1.0-SNAPSHOT.jar
+
+or
+
+java -jar target/client-part1-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 

@@ -17,10 +17,10 @@ Part 2 of the Ski Resort Management System client implementation, adding detaile
 ### Setup Steps
 __1. Modify Configuration__
 ```java
-server.url=http://your-ec2-instance:8080/api/skiers
+server.url=http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
 thread.count=32
 request.count=200000
-metrics.output.path=./metrics.csv
+metrics.output.path=./request_statistics.csv
 ```
 __2. Compile__
 ```java
@@ -28,7 +28,11 @@ mvn clean package
 ```
 __3. run__
 ```java
-java -jar target/client-part2.jar
+java -jar target/client-part2-1.0-SNAPSHOT.jar
+
+    or
+
+java -jar target/client-part2-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 
