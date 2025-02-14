@@ -10,11 +10,14 @@ import upic.client.config.ClientConfig;
 import upic.client.model.LiftRideEvent;
 import upic.client.producer.EventGenerator;
 import upic.client.sender.RequestSender;
+import java.util.concurrent.atomic.LongAdder;
 
 public class SkiResortClient {
   private final BlockingQueue<LiftRideEvent> eventQueue;
-  private final AtomicInteger successCount = new AtomicInteger(0);
-  private final AtomicInteger failureCount = new AtomicInteger(0);
+//  private final AtomicInteger successCount = new AtomicInteger(0);
+//  private final AtomicInteger failureCount = new AtomicInteger(0);
+  private final LongAdder successCount = new LongAdder();
+  private final LongAdder failureCount = new LongAdder();
   private final ExecutorService executor;
 
   public SkiResortClient() {
@@ -91,8 +94,10 @@ public class SkiResortClient {
   private void printResults(long wallTime) {
     System.out.println("\nClient Results:");
     System.out.println("Total Requests: " + ClientConfig.TOTAL_REQUESTS);
-    System.out.println("Successful Requests: " + successCount.get());
-    System.out.println("Failed Requests: " + failureCount.get());
+//    System.out.println("Successful Requests: " + successCount.get());
+//    System.out.println("Failed Requests: " + failureCount.get());
+    System.out.println("Successful Requests: " + successCount.sum());
+    System.out.println("Failed Requests: " + failureCount.sum());
     System.out.println("Wall Time: " + wallTime + " ms");
     System.out.println("Throughput: " +
         String.format("%.2f", (ClientConfig.TOTAL_REQUESTS * 1000.0 / wallTime)) +

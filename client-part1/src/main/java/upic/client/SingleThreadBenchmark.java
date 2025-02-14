@@ -7,12 +7,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import upic.client.model.LiftRideEvent;
 import upic.client.producer.EventGenerator;
 import upic.client.sender.RequestSender;
+import java.util.concurrent.atomic.LongAdder;
 
 public class SingleThreadBenchmark {
   private static final int TEST_REQUESTS = 10000;
   private final BlockingQueue<LiftRideEvent> eventQueue;
-  private final AtomicInteger successCount = new AtomicInteger(0);
-  private final AtomicInteger failedCount = new AtomicInteger(0);
+//  private final AtomicInteger successCount = new AtomicInteger(0);
+//  private final AtomicInteger failedCount = new AtomicInteger(0);
+  private final LongAdder successCount = new LongAdder();
+  private final LongAdder failedCount = new LongAdder();
 
   public SingleThreadBenchmark(){
     this.eventQueue = new LinkedBlockingQueue<>(1000);

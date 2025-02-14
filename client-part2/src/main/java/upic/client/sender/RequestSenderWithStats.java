@@ -13,6 +13,7 @@ import upic.client.config.ClientConfig;
 import upic.client.model.LiftRideEvent;
 import upic.client.model.Statistics;
 import upic.client.util.StatisticsCollector;
+import java.util.concurrent.atomic.LongAdder;
 
 public class RequestSenderWithStats implements Runnable {
   private final BlockingQueue<LiftRideEvent> queue;
@@ -20,15 +21,21 @@ public class RequestSenderWithStats implements Runnable {
   private final CountDownLatch latch;
   private final HttpClient client;
   private final Gson gson = new Gson();
-  private final AtomicInteger successCount;
-  private final AtomicInteger failureCount;
+//  private final AtomicInteger successCount;
+//  private final AtomicInteger failureCount;
+  private final LongAdder successCount;
+  private final LongAdder failureCount;
   private final StatisticsCollector statsCollector;
 
-  public RequestSenderWithStats(BlockingQueue<LiftRideEvent> queue,
+
+  public RequestSenderWithStats(
+      BlockingQueue<LiftRideEvent> queue,
       int requestCount,
       CountDownLatch latch,
-      AtomicInteger successCount,
-      AtomicInteger failureCount,
+//      AtomicInteger successCount,
+//      AtomicInteger failureCount,
+      LongAdder successCount,
+      LongAdder failureCount,
       StatisticsCollector statsCollector) {
     this.queue = queue;
     this.requestCount = requestCount;
@@ -97,9 +104,11 @@ public class RequestSenderWithStats implements Runnable {
     ));
 
     if (success) {
-      successCount.incrementAndGet();
+//      successCount.incrementAndGet();
+      successCount.increment();
     } else {
-      failureCount.incrementAndGet();
+//      failureCount.incrementAndGet();
+      failureCount.increment();
     }
   }
 }

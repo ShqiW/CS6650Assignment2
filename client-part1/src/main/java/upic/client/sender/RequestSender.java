@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import upic.client.config.ClientConfig;
 import upic.client.model.LiftRideEvent;
+import java.util.concurrent.atomic.LongAdder;
 
 public class RequestSender implements Runnable {
   private final BlockingQueue<LiftRideEvent> queue;
@@ -18,12 +19,26 @@ public class RequestSender implements Runnable {
   private final CountDownLatch latch;
   private final HttpClient client;
   private final Gson gson = new Gson();
-  private final AtomicInteger successCount;
-  private final AtomicInteger failureCount;
+//  private final AtomicInteger successCount;
+//  private final AtomicInteger failureCount;
+  private final LongAdder successCount;
+  private final LongAdder failureCount;
 
+//  public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount,
+//      CountDownLatch latch, AtomicInteger successCount,
+//      AtomicInteger failureCount) {
+//    this.queue = queue;
+//    this.requestCount = requestCount;
+//    this.latch = latch;
+//    this.successCount = successCount;
+//    this.failureCount = failureCount;
+//    this.client = HttpClient.newBuilder()
+//        .connectTimeout(Duration.ofSeconds(10))
+//        .build();
+//  }
   public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount,
-      CountDownLatch latch, AtomicInteger successCount,
-      AtomicInteger failureCount) {
+      CountDownLatch latch, LongAdder successCount,
+      LongAdder failureCount) {
     this.queue = queue;
     this.requestCount = requestCount;
     this.latch = latch;
@@ -33,31 +48,49 @@ public class RequestSender implements Runnable {
         .connectTimeout(Duration.ofSeconds(10))
         .build();
   }
-
   @Override
   public void run() {
     try {
-//      System.out.println("Thread started, planning to send " + requestCount + " requests");
       for (int i = 0; i < requestCount; i++) {
         LiftRideEvent event = queue.take();
-//        System.out.println("Sending request " + (i + 1) + " of " + requestCount);
         boolean success = sendRequest(event);
         if (success) {
-          successCount.incrementAndGet();
-//          System.out.println("Request " + (i + 1) + " succeeded");
+          successCount.increment();
         } else {
-          failureCount.incrementAndGet();
-//          System.out.println("Request " + (i + 1) + " failed");
+          failureCount.increment();
         }
       }
     } catch (InterruptedException e) {
-      System.out.println("Thread interrupted: " + e.getMessage());
       Thread.currentThread().interrupt();
     } finally {
-      System.out.println("Thread completed");
       latch.countDown();
     }
   }
+
+//  @Override
+//  public void run() {
+//    try {
+////      System.out.println("Thread started, planning to send " + requestCount + " requests");
+//      for (int i = 0; i < requestCount; i++) {
+//        LiftRideEvent event = queue.take();
+////        System.out.println("Sending request " + (i + 1) + " of " + requestCount);
+//        boolean success = sendRequest(event);
+//        if (success) {
+//          successCount.incrementAndGet();
+////          System.out.println("Request " + (i + 1) + " succeeded");
+//        } else {
+//          failureCount.incrementAndGet();
+////          System.out.println("Request " + (i + 1) + " failed");
+//        }
+//      }
+//    } catch (InterruptedException e) {
+//      System.out.println("Thread interrupted: " + e.getMessage());
+//      Thread.currentThread().interrupt();
+//    } finally {
+//      System.out.println("Thread completed");
+//      latch.countDown();
+//    }
+//  }
 
   private boolean sendRequest(LiftRideEvent event) {
     String json = gson.toJson(event);
@@ -92,4 +125,3 @@ public class RequestSender implements Runnable {
     return false;
   }
 }
-
