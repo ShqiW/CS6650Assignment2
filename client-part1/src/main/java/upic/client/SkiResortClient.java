@@ -27,6 +27,9 @@ public class SkiResortClient {
 
   public void start() {
     System.out.println("Starting client...");
+    System.out.println("Configuration:");
+    System.out.println(" - Initial Threads: " + ClientConfig.INITIAL_THREADS);
+
     long startTime = System.currentTimeMillis();
 
     // Start event generator
@@ -58,6 +61,9 @@ public class SkiResortClient {
         int optimalThreadCount = getOptimalThreadCount(remainingRequests);
         int requestsPerThread = remainingRequests / optimalThreadCount;
 
+        System.out.println(" - Remaining Requests: " + remainingRequests);
+        System.out.println(" - Additional Threads Used: " + optimalThreadCount);
+
         CountDownLatch remainingLatch = new CountDownLatch(optimalThreadCount);
 
         for (int i = 0; i < optimalThreadCount; i++) {
@@ -85,6 +91,7 @@ public class SkiResortClient {
     long endTime = System.currentTimeMillis();
     printResults(endTime - startTime);
   }
+
 
   private int getOptimalThreadCount(int remainingRequests) {
     int processors = Runtime.getRuntime().availableProcessors();
