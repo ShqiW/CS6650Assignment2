@@ -76,12 +76,12 @@ public class RequestSender implements Runnable {
 ## Postman Test
 __1. For Server-servlet__
 http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
-![logo](./images/Postman-testServerServlet.png)
+![logo](./util/Postman-testServerServlet.png)
 
 
 __2. For Server-springboot__
 http://35.91.119.93:8081/skiers
-![logo](./images/Postman-testServerSpringboot.png)
+![logo](./util/Postman-testServerSpringboot.png)
 
 
 
@@ -92,6 +92,25 @@ According to Little's Law(N = X * R)
 * N = 32(Threads number)
 * R = 24,70ms(single request response time)
 * Theoretical max throughput X = 32 * 0.0247 = 1295 requests/second
+
+According to **Little's Law (N = X * R)**:
+  X = 1 / 0.02537 = 39.39 requests/second
+
+- **N = 1** (Threads number)
+- **R = 25.37ms** (Single request response time)
+
+Theoretical max throughput:
+X = 1 / 0.02537 = 39.39 requests/second
+
+
+According to **Little's Law (N = X * R)**:
+
+- **N = 80** (Threads number: 32 initial + 48 additional)
+- **R = 0.572ms** (Single request response time)
+
+Theoretical max throughput:
+X = 80 * (1 / 0.000572) = 13986.71 requests/second
+
 
 ### 2. Client1 Actual performance
 __Performance Analysis using Servlet__
@@ -207,24 +226,24 @@ Chart generated: throughput_chart.png
 
 
 __Client 2: Throughput Over Time Plot(Servlet)__
-![logo](./util/client)
+![logo](./util/client2-servlet-throughput_chart.png)
 
 __Client 2: Throughput Over Time Plot(Springboot)__
-![logo](./client-part2/throughput_chart.png)
+![logo](./util/cleint2-springboot-throughput_chart.png)
 
 ## Screenshot
-__Client1: Single Thread Test__
-![logo](./images/Client1-SingleThreadTest.png)
 
 __Client 1: Using Servlet__
-![logo](./images/Client1-Servlet.png)
+![logo](./util/client1-servlet.png)
 
 __Client 1: Using Springboot__
-![logo](./images/Client1-Springboot.png)
+![logo](./util/client1-springboot.png)
 
 
 __Client 2: Using Servlet__
-![logo](./images/Client2-Servlet.png)
+![logo](./util/Client2-Servlet.png)
 
 __Client 2: Using Springboot__
-![logo](./images/Client2-Springboot.png)
+![logo](./util/Client2-Springboot.png)
+
+
