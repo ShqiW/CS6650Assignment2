@@ -101,12 +101,115 @@ __Single Thread Test__
 
 
 __Performance Analysis using Servlet__
+```txt
+Starting single thread benchmark...
+
+Benchmark Results:
+Total Requests: 10000
+Successful Requests: 10000
+Failed Requests: 0
+Wall Time: 253678ms
+Throughput: 39.00 requests/second
+Average Latency: 25.37 ms/request
+Starting client...
+Configuration:
+ - Initial Threads: 32
+Initial phase completed
+ - Remaining Requests: 168000
+ - Additional Threads Used: 48
+Remaining phase completed
+
+Client Results:
+Total Requests: 200000
+Successful Requests: 200000
+Failed Requests: 0
+Wall Time: 114385 ms
+Throughput: 1748.48 requests/second
+```
+
+
 __Performance Analysis using Springboot__
+```txt
+Starting single thread benchmark...
+
+Benchmark Results:
+Total Requests: 10000
+Successful Requests: 10000
+Failed Requests: 0
+Wall Time: 237952ms
+Throughput: 42.00 requests/second
+Average Latency: 23.80 ms/request
+Starting client...
+Configuration:
+ - Initial Threads: 32
+Initial phase completed
+ - Remaining Requests: 168000
+ - Additional Threads Used: 48
+Remaining phase completed
+
+Client Results:
+Total Requests: 200000
+Successful Requests: 200000
+Failed Requests: 0
+Wall Time: 121741 ms
+Throughput: 1642.83 requests/second
+
+```
 
 
 ### 3. Client2 Actual performance
 __Performance Analysis using Servlet__
+```txt
+Starting client...
+Configuration:
+ - Initial Threads: 32
+Initial phase completed
+ - Remaining Requests: 168000
+ - Additional Threads Used: 48
+Remaining phase completed
+
+Client Part 2 Results:
+Total Threads: 32
+Additional Threads Used: 48
+Successful Requests: 200000
+Failed Requests: 0
+Wall Time: 119592 ms
+
+Detailed Performance Statistics:
+Mean Response Time: 24.73 ms
+Median Response Time: 23.00 ms
+99th Percentile Response Time: 58.00 ms
+Min Response Time: 11.00 ms
+Max Response Time: 6426.00 ms
+Throughput: 1672.35 requests/second
+Chart generated: throughput_chart.png
+```
 __Performance Analysis using Springboot__
+```txt
+Starting client...
+Configuration:
+ - Initial Threads: 32
+Initial phase completed
+ - Remaining Requests: 168000
+ - Additional Threads Used: 48
+Remaining phase completed
+
+Client Part 2 Results:
+Total Threads: 32
+Additional Threads Used: 48
+Successful Requests: 200000
+Failed Requests: 0
+Wall Time: 123689 ms
+
+Detailed Performance Statistics:
+Mean Response Time: 25.07 ms
+Median Response Time: 24.00 ms
+99th Percentile Response Time: 52.00 ms
+Min Response Time: 12.00 ms
+Max Response Time: 6402.00 ms
+Throughput: 1616.96 requests/second
+Chart generated: throughput_chart.png
+```
 
 
 __Client 2: Throughput Over Time Plot__
