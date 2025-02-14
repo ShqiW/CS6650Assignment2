@@ -31,6 +31,9 @@ public class SkiResortClientWithStats {
 
   public void start() {
     System.out.println("Starting client...");
+    System.out.println("Configuration:");
+    System.out.println(" - Initial Threads: " + ClientConfig.INITIAL_THREADS);
+
     long startTime = System.currentTimeMillis();
 
     // Start event generator
@@ -58,9 +61,13 @@ public class SkiResortClientWithStats {
       // Calculate remaining requests
       int completedRequests = ClientConfig.INITIAL_THREADS * ClientConfig.REQUESTS_PER_THREAD;
       int remainingRequests = ClientConfig.TOTAL_REQUESTS - completedRequests;
+
       if (remainingRequests > 0) {
         int optimalThreadCount = getOptimalThreadCount(remainingRequests);
         int requestsPerThread = remainingRequests / optimalThreadCount;
+
+        System.out.println(" - Remaining Requests: " + remainingRequests);
+        System.out.println(" - Additional Threads Used: " + optimalThreadCount);
 
         CountDownLatch remainingLatch = new CountDownLatch(optimalThreadCount);
 
@@ -95,6 +102,7 @@ public class SkiResortClientWithStats {
     ThroughputChartGenerator.generateThroughputChart("request_statistics.csv", "throughput_chart.png");
   }
 
+
   private int getOptimalThreadCount(int remainingRequests) {
     int processors = Runtime.getRuntime().availableProcessors();
     return Math.min(processors * 4, remainingRequests / 100);
@@ -103,6 +111,7 @@ public class SkiResortClientWithStats {
   private void printResults(long wallTime) {
     System.out.println("\nClient Part 2 Results:");
     System.out.println("Total Threads: " + ClientConfig.INITIAL_THREADS);
+    System.out.println("Additional Threads Used: " + getOptimalThreadCount(ClientConfig.TOTAL_REQUESTS - (ClientConfig.INITIAL_THREADS * ClientConfig.REQUESTS_PER_THREAD)));
 //    System.out.println("Successful Requests: " + successCount.get());
 //    System.out.println("Failed Requests: " + failureCount.get());
     System.out.println("Successful Requests: " + successCount.sum());
