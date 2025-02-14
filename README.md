@@ -76,11 +76,12 @@ public class RequestSender implements Runnable {
 ## Postman Test
 __1. For Server-servlet__
 http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
-
+![logo](./images/Postman-testServerServlet.png)
 
 
 __2. For Server-springboot__
 http://35.91.119.93:8081/skiers
+![logo](./images/Postman-testServerSpringboot.png)
 
 
 
@@ -92,59 +93,39 @@ According to Little's Law(N = X * R)
 * R = 24,70ms(single request response time)
 * Theoretical max throughput X = 32 * 0.0247 = 1295 requests/second
 
-### 2. Actual performance
-__Client1: Single Thread Test__
+### 2. Client1 Actual performance
+__Single Thread Test__
 * Throughput: 40 requests/second
 * Average latency: 24.70 ms
 
 
-__Client 1: 32 Thread Test__
-* Throughput: 1124.46 requests/second
-* Average response time: 26.49 ms
 
-__Client 2: 32 Thread Test With Statistics__
-* Client Part 2 Results:
-* Total Threads: 32
-* Wall Time: 177863 ms
-* Successful Requests: 200000
-* Failed Requests: 0
+__Performance Analysis using Servlet__
+__Performance Analysis using Springboot__
 
-Detailed Performance Statistics:
-* Mean Response Time: 26.49 ms
-* Median Response Time: 25.00 ms
-* 99th Percentile Response Time: 51.00 ms
-* Min Response Time: 12.00 ms
-* Max Response Time: 7463.00 ms
-* Throughput: 1124.46 requests/second
 
-__Client 2: 32 Thread Test With Statistics using Spring Boot__
-```markdown
-| Metric | Servlet | Spring Boot |
-|--------|---------|-------------|
-| Mean Response Time | 26.49ms | ??ms |
-| Throughput | 1124.46 req/s | ?? req/s |
-| P99 Response Time | 51.00ms | ??ms |
-| Min Response Time | 12.00ms | ??ms |
-| Max Response Time | 7463ms | ??ms |
+### 3. Client2 Actual performance
+__Performance Analysis using Servlet__
+__Performance Analysis using Springboot__
 
-```
 
 __Client 2: Throughput Over Time Plot__
 ![logo](./client-part2/throughput_chart.png)
 
 
-### 3. Screenshot
-__Single Thread Test__
+## Screenshot
+__Client1: Single Thread Test__
 ![logo](./images/Client1-SingleThreadTest.png)
 
-__Client 1: 32 Thread Test__
-![logo](./images/Client1-32ThreadTest.png)
+__Client 1: Using Servlet__
+![logo](./images/Client1-Servlet.png)
 
-__Client 2: 32 Thread Test With Statistics__
-![logo](./images/Client2-32ThreadTest.png)
+__Client 1: Using Springboot__
+![logo](./images/Client1-Springboot.png)
 
-__Client 2: 32 Thread Test With Statistics using Spring Boot__
 
-__EC2(Using Postman)__
-![logo](./images/EC2PostTest.png)
+__Client 2: Using Servlet__
+![logo](./images/Client2-Servlet.png)
 
+__Client 2: Using Springboot__
+![logo](./images/Client2-Springboot.png)
