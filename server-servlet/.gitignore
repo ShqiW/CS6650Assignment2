@@ -2,6 +2,8 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+!server-servlet/target/
+!server-servlet/target/server-1.0-SNAPSHOT.war
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

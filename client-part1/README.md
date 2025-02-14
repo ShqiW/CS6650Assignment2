@@ -16,10 +16,10 @@ Part 1 of the Ski Resort Management System client implementation, focusing on ef
 
 ### Setup Steps
 __1. Modify configuration__
+Edit in client/config/ClientConfig.java
 ```bash
-server.url=http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
-thread.count=32
-request.count=200000
+BASE_URL = "http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers" // for server-servlet
+BASE_URL = "http://35.91.119.93:8081/skiers" // for server-springboot
 ```
 
 __2. Compile__
@@ -29,28 +29,34 @@ mvn clean package
 
 __3. run__
 ```bash
-java -jar target/client-part1-1.0-SNAPSHOT.jar
-
-or
-
 java -jar target/client-part1-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
-
-
-## Configuration Details
-### Key Settings
-* server.url: Server API endpoint URL
-* thread.count: Number of concurrent threads (default 32)
-* request.count: Total request count (default 200000)
-* retry.max: Maximum retry attempts (default 5)
-* queue.size: Event queue size (default 1000)
-
 ## Output Format
 ```text
-Total Threads: [thread_count]
-Successful Requests: [success_count]
-Failed Requests: [fail_count]
-Wall Time: [total_time] ms
-Throughput: [throughput] requests/second
+upic/client/SkiResortClient.class
+Starting single thread benchmark...
+
+Benchmark Results:
+Total Requests: 10000
+Successful Requests: 10000
+Failed Requests: 0
+Wall Time: 316381ms
+Throughput: 31.00 requests/second
+Average Latency: 31.64 ms/request
+Starting client...
+Configuration:
+ - Initial Threads: 32
+Initial phase completed
+ - Remaining Requests: 168000
+ - Additional Threads Used: 32
+Remaining phase completed
+
+Client Results:
+Total Requests: 200000
+Successful Requests: 200000
+Failed Requests: 0
+Wall Time: 223274 ms
+Throughput: 895.76 requests/second
+
 ```

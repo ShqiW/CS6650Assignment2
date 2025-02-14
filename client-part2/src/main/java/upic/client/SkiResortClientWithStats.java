@@ -58,7 +58,6 @@ public class SkiResortClientWithStats {
       // Calculate remaining requests
       int completedRequests = ClientConfig.INITIAL_THREADS * ClientConfig.REQUESTS_PER_THREAD;
       int remainingRequests = ClientConfig.TOTAL_REQUESTS - completedRequests;
-      System.out.println("Remaining phase completed");
       if (remainingRequests > 0) {
         int optimalThreadCount = getOptimalThreadCount(remainingRequests);
         int requestsPerThread = remainingRequests / optimalThreadCount;
