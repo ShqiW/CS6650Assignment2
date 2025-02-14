@@ -73,6 +73,18 @@ public class RequestSender implements Runnable {
 }
 ```
 
+## Postman Test
+__1. For Server-servlet__
+http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
+
+
+
+__2. For Server-springboot__
+http://35.91.119.93:8081/skiers
+
+
+
+
 ## Performance Analysis
 ### 1. Little's Law Calculation
 According to Little's Law(N = X * R)
