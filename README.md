@@ -94,12 +94,6 @@ According to Little's Law(N = X * R)
 * Theoretical max throughput X = 32 * 0.0247 = 1295 requests/second
 
 ### 2. Client1 Actual performance
-__Single Thread Test__
-* Throughput: 40 requests/second
-* Average latency: 24.70 ms
-
-
-
 __Performance Analysis using Servlet__
 ```txt
 Starting single thread benchmark...
@@ -212,9 +206,11 @@ Chart generated: throughput_chart.png
 ```
 
 
-__Client 2: Throughput Over Time Plot__
-![logo](./client-part2/throughput_chart.png)
+__Client 2: Throughput Over Time Plot(Servlet)__
+![logo](./util/client)
 
+__Client 2: Throughput Over Time Plot(Springboot)__
+![logo](./client-part2/throughput_chart.png)
 
 ## Screenshot
 __Client1: Single Thread Test__
