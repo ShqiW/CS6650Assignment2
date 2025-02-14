@@ -88,28 +88,22 @@ http://35.91.119.93:8081/skiers
 
 ## Performance Analysis
 ### 1. Little's Law Calculation
-According to Little's Law(N = X * R)
-* N = 32(Threads number)
-* R = 24,70ms(single request response time)
-* Theoretical max throughput X = 32 * 0.0247 = 1295 requests/second
-
-According to **Little's Law (N = X * R)**:
-  X = 1 / 0.02537 = 39.39 requests/second
-
-- **N = 1** (Threads number)
-- **R = 25.37ms** (Single request response time)
-
-Theoretical max throughput:
-X = 1 / 0.02537 = 39.39 requests/second
+__Single-thread baseline performance:__
 
 
-According to **Little's Law (N = X * R)**:
+* Average latency: 25.37ms/request
+* Theoretical single-thread max throughput = 1/latency = 1/(0.02537 seconds) ≈ 39.42 requests/second
 
-- **N = 80** (Threads number: 32 initial + 48 additional)
-- **R = 0.572ms** (Single request response time)
 
-Theoretical max throughput:
-X = 80 * (1 / 0.000572) = 13986.71 requests/second
+__For an 80-thread system:__
+* Theoretical maximum throughput = single-thread throughput × number of threads
+* Theoretical maximum throughput = 39.42 × 80 ≈ 3153.6 requests/second
+
+
+__Observed throughput analysis:__
+* Actual throughput: 1748.48 requests/second
+* Throughput efficiency = (actual throughput/theoretical throughput) × 100%
+* Efficiency = (1748.48/3153.6) × 100% ≈ 55.4%
 
 
 ### 2. Client1 Actual performance
