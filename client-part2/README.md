@@ -17,10 +17,8 @@ Part 2 of the Ski Resort Management System client implementation, adding detaile
 ### Setup Steps
 __1. Modify Configuration__
 ```java
-server.url=http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers
-thread.count=32
-request.count=200000
-metrics.output.path=./request_statistics.csv
+BASE_URL = "http://35.91.119.93:8080/server-1.0-SNAPSHOT/skiers" // for server-servlet
+BASE_URL = "http://35.91.119.93:8081/skiers" // for server-springboot
 ```
 __2. Compile__
 ```java
@@ -28,32 +26,36 @@ mvn clean package
 ```
 __3. run__
 ```java
-java -jar target/client-part2-1.0-SNAPSHOT.jar
-
-    or
-
 java -jar target/client-part2-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
-
-
-## Configuration Details
-### Key Settings
-* server.url: Server API endpoint URL
-* thread.count: Number of concurrent threads (default 32)
-* request.count: Total request count (default 200000)
-* metrics.output.path: Performance metrics CSV output path
-* retry.max: Maximum retry attempts (default 5)
 
 
 ## Performance Metrics Output
 ### Console Output
 ```text
-Mean Response Time: [mean_time] ms
-Median Response Time: [median_time] ms
-99th Percentile Response Time: [p99_time] ms
-Min Response Time: [min_time] ms
-Max Response Time: [max_time] ms
-Throughput: [throughput] requests/second
+Starting client...
+Configuration:
+ - Initial Threads: 32
+Initial phase completed
+ - Remaining Requests: 168000
+ - Additional Threads Used: 32
+Remaining phase completed
+
+Client Part 2 Results:
+Total Threads: 32
+Additional Threads Used: 32
+Successful Requests: 200000
+Failed Requests: 0
+Wall Time: 234947 ms
+
+Detailed Performance Statistics:
+Mean Response Time: 34.96 ms
+Median Response Time: 26.00 ms
+99th Percentile Response Time: 127.00 ms
+Min Response Time: 13.00 ms
+Max Response Time: 4723.00 ms
+Throughput: 851.26 requests/second
+
 
 ```
 ### CSV File Format
