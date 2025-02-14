@@ -19,23 +19,9 @@ public class RequestSender implements Runnable {
   private final CountDownLatch latch;
   private final HttpClient client;
   private final Gson gson = new Gson();
-//  private final AtomicInteger successCount;
-//  private final AtomicInteger failureCount;
   private final LongAdder successCount;
   private final LongAdder failureCount;
 
-//  public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount,
-//      CountDownLatch latch, AtomicInteger successCount,
-//      AtomicInteger failureCount) {
-//    this.queue = queue;
-//    this.requestCount = requestCount;
-//    this.latch = latch;
-//    this.successCount = successCount;
-//    this.failureCount = failureCount;
-//    this.client = HttpClient.newBuilder()
-//        .connectTimeout(Duration.ofSeconds(10))
-//        .build();
-//  }
   public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount,
       CountDownLatch latch, LongAdder successCount,
       LongAdder failureCount) {
@@ -67,30 +53,6 @@ public class RequestSender implements Runnable {
     }
   }
 
-//  @Override
-//  public void run() {
-//    try {
-////      System.out.println("Thread started, planning to send " + requestCount + " requests");
-//      for (int i = 0; i < requestCount; i++) {
-//        LiftRideEvent event = queue.take();
-////        System.out.println("Sending request " + (i + 1) + " of " + requestCount);
-//        boolean success = sendRequest(event);
-//        if (success) {
-//          successCount.incrementAndGet();
-////          System.out.println("Request " + (i + 1) + " succeeded");
-//        } else {
-//          failureCount.incrementAndGet();
-////          System.out.println("Request " + (i + 1) + " failed");
-//        }
-//      }
-//    } catch (InterruptedException e) {
-//      System.out.println("Thread interrupted: " + e.getMessage());
-//      Thread.currentThread().interrupt();
-//    } finally {
-//      System.out.println("Thread completed");
-//      latch.countDown();
-//    }
-//  }
 
   private boolean sendRequest(LiftRideEvent event) {
     String json = gson.toJson(event);
@@ -102,12 +64,8 @@ public class RequestSender implements Runnable {
 
     for (int attempt = 0; attempt < ClientConfig.MAX_RETRY_ATTEMPTS; attempt++) {
       try {
-//        System.out.println("Attempt " + (attempt + 1) + " of " + ClientConfig.MAX_RETRY_ATTEMPTS);
         HttpResponse<String> response =
             client.send(request, HttpResponse.BodyHandlers.ofString());
-
-//        System.out.println("Response status code: " + response.statusCode());
-
         if (response.statusCode() == 201 || response.statusCode() == 200) {
           return true;
         }
