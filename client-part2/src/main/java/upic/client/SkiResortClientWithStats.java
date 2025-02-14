@@ -12,11 +12,14 @@ import upic.client.producer.EventGenerator;
 import upic.client.sender.RequestSenderWithStats;
 import upic.client.util.StatisticsCollector;
 import upic.client.util.ThroughputChartGenerator;
+import java.util.concurrent.atomic.LongAdder;
 
 public class SkiResortClientWithStats {
   private final BlockingQueue<LiftRideEvent> eventQueue;
-  private final AtomicInteger successCount = new AtomicInteger(0);
-  private final AtomicInteger failureCount = new AtomicInteger(0);
+//  private final AtomicInteger successCount = new AtomicInteger(0);
+//  private final AtomicInteger failureCount = new AtomicInteger(0);
+  private final LongAdder successCount = new LongAdder();
+  private final LongAdder failureCount = new LongAdder();
   private final ExecutorService executor;
   private final StatisticsCollector statsCollector;
 
@@ -27,6 +30,7 @@ public class SkiResortClientWithStats {
   }
 
   public void start() {
+    System.out.println("Starting client...");
     long startTime = System.currentTimeMillis();
 
     // Start event generator
@@ -49,11 +53,12 @@ public class SkiResortClientWithStats {
 
     try {
       initialLatch.await();
+      System.out.println("Initial phase completed");
 
       // Calculate remaining requests
       int completedRequests = ClientConfig.INITIAL_THREADS * ClientConfig.REQUESTS_PER_THREAD;
       int remainingRequests = ClientConfig.TOTAL_REQUESTS - completedRequests;
-
+      System.out.println("Remaining phase completed");
       if (remainingRequests > 0) {
         int optimalThreadCount = getOptimalThreadCount(remainingRequests);
         int requestsPerThread = remainingRequests / optimalThreadCount;
@@ -72,6 +77,7 @@ public class SkiResortClientWithStats {
         }
 
         remainingLatch.await();
+        System.out.println("Remaining phase completed");
       }
 
     } catch (InterruptedException e) {
@@ -98,8 +104,10 @@ public class SkiResortClientWithStats {
   private void printResults(long wallTime) {
     System.out.println("\nClient Part 2 Results:");
     System.out.println("Total Threads: " + ClientConfig.INITIAL_THREADS);
-    System.out.println("Successful Requests: " + successCount.get());
-    System.out.println("Failed Requests: " + failureCount.get());
+//    System.out.println("Successful Requests: " + successCount.get());
+//    System.out.println("Failed Requests: " + failureCount.get());
+    System.out.println("Successful Requests: " + successCount.sum());
+    System.out.println("Failed Requests: " + failureCount.sum());
     System.out.println("Wall Time: " + wallTime + " ms");
   }
 
