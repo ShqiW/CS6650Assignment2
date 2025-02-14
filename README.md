@@ -241,9 +241,9 @@ __Client 1: Using Springboot__
 
 
 __Client 2: Using Servlet__
-![logo](./util/Client2-servlet.png)
+![logo](./util/client2-servlet.png)
 
 __Client 2: Using Springboot__
-![logo](./util/Client2-springboot.png)
+![logo](./util/client2-springboot.png)
 
 
