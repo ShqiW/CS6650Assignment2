@@ -23,17 +23,15 @@ public class SkiResortClient {
   }
 
   public void start() {
-//    System.out.println("Starting client...");
+    System.out.println("Starting client...");
     long startTime = System.currentTimeMillis();
 
     // Start event generator
-//    System.out.println("Starting event generator...");
     EventGenerator generator = new EventGenerator(eventQueue);
     Thread generatorThread = new Thread(generator);
     generatorThread.start();
 
     // Initial phase with 32 threads
-//    System.out.println("Starting initial phase with " + ClientConfig.INITIAL_THREADS + " threads...");
     CountDownLatch initialLatch = new CountDownLatch(ClientConfig.INITIAL_THREADS);
     for (int i = 0; i < ClientConfig.INITIAL_THREADS; i++) {
       executor.submit(new RequestSender(
@@ -46,19 +44,16 @@ public class SkiResortClient {
     }
 
     try {
-//      System.out.println("Waiting for initial phase to complete...");
       initialLatch.await();
-//      System.out.println("Initial phase completed");
+      System.out.println("Initial phase completed");
 
       // Calculate remaining requests
       int completedRequests = ClientConfig.INITIAL_THREADS * ClientConfig.REQUESTS_PER_THREAD;
       int remainingRequests = ClientConfig.TOTAL_REQUESTS - completedRequests;
-//      System.out.println("Remaining requests: " + remainingRequests);
 
       if (remainingRequests > 0) {
         int optimalThreadCount = getOptimalThreadCount(remainingRequests);
         int requestsPerThread = remainingRequests / optimalThreadCount;
-//        System.out.println("Starting remaining phase with " + optimalThreadCount + " threads...");
 
         CountDownLatch remainingLatch = new CountDownLatch(optimalThreadCount);
 
@@ -72,16 +67,14 @@ public class SkiResortClient {
           ));
         }
 
-//        System.out.println("Waiting for remaining phase to complete...");
         remainingLatch.await();
-//        System.out.println("Remaining phase completed");
+        System.out.println("Remaining phase completed");
       }
 
     } catch (InterruptedException e) {
-//      System.out.println("Client interrupted: " + e.getMessage());
+      System.out.println("Client interrupted: " + e.getMessage());
       Thread.currentThread().interrupt();
     } finally {
-//      System.out.println("Shutting down client...");
       generator.stop();
       executor.shutdown();
     }
@@ -89,14 +82,15 @@ public class SkiResortClient {
     long endTime = System.currentTimeMillis();
     printResults(endTime - startTime);
   }
+
   private int getOptimalThreadCount(int remainingRequests) {
     int processors = Runtime.getRuntime().availableProcessors();
     return Math.min(processors * 4, remainingRequests / 100);
   }
 
   private void printResults(long wallTime) {
-    System.out.println("\nClient Part 1 Results:");
-    System.out.println("Total Threads: " + ClientConfig.INITIAL_THREADS);
+    System.out.println("\nClient Results:");
+    System.out.println("Total Requests: " + ClientConfig.TOTAL_REQUESTS);
     System.out.println("Successful Requests: " + successCount.get());
     System.out.println("Failed Requests: " + failureCount.get());
     System.out.println("Wall Time: " + wallTime + " ms");
@@ -106,6 +100,10 @@ public class SkiResortClient {
   }
 
   public static void main(String[] args) {
+    // Run single thread benchmark first
+    new SingleThreadBenchmark().runBenchmark();
+
+    // Then run the Ski Resort Client test
     new SkiResortClient().start();
   }
 }

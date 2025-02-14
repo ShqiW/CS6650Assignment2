@@ -1,4 +1,4 @@
-package cs6650.server.model;
+package upic.server.model;
 
 public class LiftRideEvent {
   private int skierId;

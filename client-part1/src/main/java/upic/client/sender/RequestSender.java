@@ -51,10 +51,10 @@ public class RequestSender implements Runnable {
         }
       }
     } catch (InterruptedException e) {
-//      System.out.println("Thread interrupted: " + e.getMessage());
+      System.out.println("Thread interrupted: " + e.getMessage());
       Thread.currentThread().interrupt();
     } finally {
-//      System.out.println("Thread completed");
+      System.out.println("Thread completed");
       latch.countDown();
     }
   }
@@ -79,11 +79,11 @@ public class RequestSender implements Runnable {
           return true;
         }
         if (response.statusCode() >= 400 && response.statusCode() < 500) {
-//          System.out.println("Client error: " + response.body());
+          System.out.println("Client error: " + response.body());
           return false;
         }
       } catch (Exception e) {
-//        System.out.println("Request failed with error: " + e.getMessage());
+        System.out.println("Request failed with error: " + e.getMessage());
         if (attempt == ClientConfig.MAX_RETRY_ATTEMPTS - 1) {
           return false;
         }

@@ -1,7 +1,7 @@
-package cs6650.server;
+package upic.server;
 
 import com.google.gson.Gson;
-import cs6650.server.model.LiftRideEvent;
+import upic.server.model.LiftRideEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -1,4 +1,4 @@
-package cs6650.server.model;
+package upic.server.model;
 public class ErrorResponse {
   private final String message;
   private final int statusCode;
