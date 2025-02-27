@@ -1,5 +1,10 @@
 package upic.server;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.gson.Gson;
 import upic.server.model.LiftRideEvent;
 import java.io.BufferedReader;
@@ -14,6 +19,42 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet("/skiers/*")
 public class SkierServlet extends HttpServlet {
   private final Gson gson = new Gson();
+  private AmazonSQS sqsClients;
+  private String queueUrl;
+
+
+  @Override
+  public void init() throws ServletException {
+    super.init();
+
+    try{
+      String accessKey = System.getProperty("aws.accessKeyId");
+      String accessKeySecret = System.getProperty("aws.secretkey");
+      String region = System.getProperty("aws.region","us-west-2");
+      queueUrl = System.getProperty("aws.queueUrl");
+
+      if (accessKey == null || accessKeySecret == null || region == null) {
+        getServletContext().log("Access Key/Secret or Region not specified");
+        sqsClients = AmazonSQSClientBuilder.standard()
+                .withRegion(Regions.fromName(region))
+                .build();
+      }else {
+        BasicAWSCredentials credentials = new BasicAWSCredentials(accessKey, accessKeySecret);
+        sqsClients = AmazonSQSClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                .withRegion(Regions.fromName(region))
+                .build();
+      }
+      getServletContext().log("SQS client created. Here is the queue URl: " + queueUrl);
+
+
+
+    } catch (Exception e) {
+      getServletContext().log("SQS client creation failed " + e.getMessage());
+      throw new ServletException("cannot initialize SQS client", e);
+
+    }
+  }
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse res)
@@ -38,27 +79,6 @@ public class SkierServlet extends HttpServlet {
     out.print(jsonResponse);
   }
 
-//  protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-//    res.setContentType("text/plain");
-//    String urlPath = req.getPathInfo();
-//
-//    if (urlPath == null || urlPath.isEmpty()) {
-//      res.setStatus(HttpServletResponse.SC_NOT_FOUND);
-//      res.getWriter().write("missing paramterers");
-//      return;
-//    }
-//
-//    String[] urlParts = urlPath.split("/");
-//
-//    if (!isUrlValid(urlParts)) {
-//      res.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
-//      res.getWriter().write("invalid url path");
-//    }
-//    res.setStatus(HttpServletResponse.SC_OK);
-//    String jsonResponse = "{\"status\":200}";
-//    res.getWriter().write(jsonResponse);
-//
-//  }
 
 
   @Override
