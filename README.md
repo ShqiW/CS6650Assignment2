@@ -1,4 +1,4 @@
-# CS6650-Assignment1
+# CS6650-Assignment2
 
 ## System Review
 This system implements a multi-threaded client for simulating and uploading ski lift ride events. The system efficiently sends large volumes of POST requests to the server while collecting detailed performance metrics.
