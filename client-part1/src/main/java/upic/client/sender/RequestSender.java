@@ -56,8 +56,16 @@ public class RequestSender implements Runnable {
 
   private boolean sendRequest(LiftRideEvent event) {
     String json = gson.toJson(event);
+    // Build the correct URL path with the required format
+    String url = String.format("%s/resorts/%d/seasons/%d/days/%d/skiers/%d",
+            ClientConfig.BASE_URL,
+            event.getResortId(),
+            event.getSeasonId(),
+            event.getDayId(),
+            event.getSkierId());
+
     HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(ClientConfig.BASE_URL))
+        .uri(URI.create(url))
         .header("Content-Type", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(json))
         .build();

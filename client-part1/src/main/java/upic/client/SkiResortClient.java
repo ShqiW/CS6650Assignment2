@@ -58,7 +58,9 @@ public class SkiResortClient {
       int remainingRequests = ClientConfig.TOTAL_REQUESTS - completedRequests;
 
       if (remainingRequests > 0) {
-        int optimalThreadCount = getOptimalThreadCount(remainingRequests);
+        int optimalThreadCount = 500;
+
+//        int optimalThreadCount = getOptimalThreadCount(remainingRequests);
         int requestsPerThread = remainingRequests / optimalThreadCount;
 
         System.out.println(" - Remaining Requests: " + remainingRequests);
