@@ -1,8 +1,0 @@
-[2025-03-08 22:08:32] ====== Starting comprehensive performance testing ======
-[2025-03-08 22:08:32] Creating results directory: test_results_20250308_220832
-[2025-03-08 22:08:32] Initializing results CSV file
-[2025-03-08 22:08:32] Testing SSH connection to consumer host...
-[2025-03-08 22:08:33] SSH connection successful
-[2025-03-08 22:08:33] ====== Part 1: Single server testing (fixed initial thread count of 32) ======
-[2025-03-08 22:08:33] Purging SQS queue...
-[2025-03-08 22:08:34] Waiting 15 seconds for purge operation to complete
