@@ -1,0 +1,46 @@
+[2025-03-08 20:31:56] ====== Starting comprehensive performance testing ======
+[2025-03-08 20:31:56] Creating results directory: test_results_20250308_203156
+[2025-03-08 20:31:56] Initializing results CSV file
+[2025-03-08 20:31:56] ====== Part 1: Single server testing (fixed initial thread count of 32) ======
+[2025-03-08 20:31:56] Purging SQS queue...
+[2025-03-08 20:32:06] Restarting consumer with 32 threads
+[2025-03-08 20:32:42] Starting test: SingleServer_Consumer32
+[2025-03-08 20:32:42] Server URL: http://54.185.34.27/server-2.0-SNAPSHOT/skiers/
+[2025-03-08 20:32:42] Initial threads: 32
+[2025-03-08 20:32:42] Output file: single_server_consumer32.csv
+[2025-03-08 20:32:43] Starting queue depth: 0
+[2025-03-08 20:42:47] Test SingleServer_Consumer32 completed in 604 seconds
+[2025-03-08 20:42:48] Final queue depth: 210000
+[2025-03-08 20:42:48] Waiting for queue to process...
+[2025-03-08 20:42:48] Current queue depth: 210000
+[2025-03-08 20:42:58] Current queue depth: 210000
+[2025-03-08 20:43:09] Current queue depth: 210000
+[2025-03-08 20:43:19] Current queue depth: 210000
+[2025-03-08 20:43:30] Current queue depth: 210000
+[2025-03-08 20:43:40] Current queue depth: 210000
+[2025-03-08 20:43:51] Current queue depth: 210000
+[2025-03-08 20:44:01] Current queue depth: 210000
+[2025-03-08 20:44:12] Current queue depth: 210000
+[2025-03-08 20:44:22] Current queue depth: 210000
+[2025-03-08 20:44:33] Current queue depth: 210000
+[2025-03-08 20:44:44] Current queue depth: 210000
+[2025-03-08 20:44:54] Current queue depth: 210000
+[2025-03-08 20:45:05] Current queue depth: 210000
+[2025-03-08 20:45:15] Current queue depth: 210000
+[2025-03-08 20:45:26] Current queue depth: 210000
+[2025-03-08 20:45:36] Current queue depth: 210000
+[2025-03-08 20:45:47] Current queue depth: 210000
+[2025-03-08 20:45:57] Current queue depth: 210000
+[2025-03-08 20:46:07] Current queue depth: 210000
+[2025-03-08 20:46:18] Current queue depth: 210000
+[2025-03-08 20:46:28] Current queue depth: 210000
+[2025-03-08 20:46:39] Current queue depth: 210000
+[2025-03-08 20:46:49] Current queue depth: 210000
+[2025-03-08 20:47:00] Current queue depth: 210000
+[2025-03-08 20:47:10] Current queue depth: 210000
+[2025-03-08 20:47:21] Current queue depth: 210000
+[2025-03-08 20:47:31] Current queue depth: 210000
+[2025-03-08 20:47:42] Current queue depth: 210000
+[2025-03-08 20:47:52] Current queue depth: 210000
+[2025-03-08 20:48:03] Current queue depth: 210000
+[2025-03-08 20:48:13] Current queue depth: 210000

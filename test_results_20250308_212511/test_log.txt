@@ -1,0 +1,17 @@
+[2025-03-08 21:25:11] ====== Starting comprehensive performance testing ======
+[2025-03-08 21:25:11] Creating results directory: test_results_20250308_212511
+[2025-03-08 21:25:11] Initializing results CSV file
+[2025-03-08 21:25:11] ====== Part 1: Single server testing (fixed initial thread count of 32) ======
+[2025-03-08 21:25:11] Purging SQS queue...
+[2025-03-08 21:25:21] Restarting consumer with 32 threads
+[2025-03-08 21:25:58] Starting test: SingleServer_Consumer32
+[2025-03-08 21:25:58] Server URL: http://54.185.34.27/server-2.0-SNAPSHOT/skiers/
+[2025-03-08 21:25:58] Initial threads: 32
+[2025-03-08 21:25:58] Output file: single_server_consumer32.csv
+[2025-03-08 21:25:59] Starting queue depth: 0
+[2025-03-08 21:35:10] Test SingleServer_Consumer32 completed in 551 seconds
+[2025-03-08 21:35:11] Final queue depth: 0
+[2025-03-08 21:35:11] Waiting for queue to process...
+[2025-03-08 21:35:11] Current queue depth: 0
+[2025-03-08 21:35:11] Queue processing complete (0 < 100)
+[2025-03-08 21:35:11] Restarting consumer with 64 threads

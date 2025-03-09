@@ -1,0 +1,5 @@
+[2025-03-08 22:08:46] ====== Starting comprehensive performance testing ======
+[2025-03-08 22:08:46] Creating results directory: test_results_20250308_220846
+[2025-03-08 22:08:46] Initializing results CSV file
+[2025-03-08 22:08:46] ====== Part 1: Single server testing (fixed initial thread count of 32) ======
+[2025-03-08 22:08:46] Purging SQS queue...
