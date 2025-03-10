@@ -1,4 +1,4 @@
-package upic.consumer;
+package upic.consumer.model;
 
 public class LiftRideEvent {
     private int skierId;

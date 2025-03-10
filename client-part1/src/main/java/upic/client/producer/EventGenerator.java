@@ -7,14 +7,18 @@ import upic.client.model.LiftRideEvent;
 public class EventGenerator implements Runnable {
   private final BlockingQueue<LiftRideEvent> queue;
   private volatile boolean running = true;
+  private int requestCount = 0;
 
-  public EventGenerator(BlockingQueue<LiftRideEvent> queue) {
+  public EventGenerator(BlockingQueue<LiftRideEvent> queue, int requestCount) {
     this.queue = queue;
+    this.requestCount =requestCount;
   }
 
   @Override
   public void run() {
-    while (running) {
+
+    for (int i = 0; i < requestCount; i++)
+    {
       try {
         queue.put(generateEvent());
       } catch (InterruptedException e) {
