@@ -1,5 +1,0 @@
-[2025-03-09 17:08:04] ====== Starting comprehensive performance testing ======
-[2025-03-09 17:08:04] Creating results directory: test_results_20250309_170804
-[2025-03-09 17:08:04] Initializing results CSV file
-[2025-03-09 17:08:04] ====== Part 1: Single server testing (fixed initial thread count of 32) ======
-[2025-03-09 17:08:04] Restarting consumer with 32 threads
