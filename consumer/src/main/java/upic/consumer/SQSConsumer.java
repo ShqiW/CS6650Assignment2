@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import upic.consumer.config.CircuitBreakerConfig;
 import upic.consumer.config.ConsumerConfig;
 import upic.consumer.model.LiftRideEvent;
+import upic.consumer.config.SQSAuthConfig;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -113,10 +114,12 @@ public class SQSConsumer {
 
         this.scheduledExecutor = Executors.newScheduledThreadPool(2);
 
-        // Setup AWS SQS client
-        this.sqsClient = AmazonSQSClientBuilder.standard()
-                .withRegion(region)
-                .build();
+//        // Setup AWS SQS client
+//        this.sqsClient = AmazonSQSClientBuilder.standard()
+//                .withRegion(region)
+//                .build();
+        // withou IAM role
+        this.sqsClient = SQSAuthConfig.getSQSClient();
 
         // Setup Gson for JSON parsing
         this.gson = new Gson();

@@ -8,7 +8,7 @@ public class ConsumerConfig {
     // AWS SQS configuration
     public static final String AWS_REGION = System.getProperty("aws.region", "us-west-2");
     public static final String SQS_QUEUE_URL = System.getProperty("aws.queueUrl",
-            "https://sqs.us-west-2.amazonaws.com/941377132918/ski-lift-events");
+            "https://sqs.us-west-2.amazonaws.com/145832436892/ski-lift-events");
 
     // Thread pool configuration
     public static final int INITIAL_THREAD_COUNT = Integer.parseInt(

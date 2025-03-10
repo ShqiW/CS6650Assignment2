@@ -27,7 +27,7 @@ public class SingleThreadBenchmark {
     long startTime = System.currentTimeMillis();
 
     // Start event generator
-    EventGenerator generator = new EventGenerator(eventQueue);
+    EventGenerator generator = new EventGenerator(eventQueue,TEST_REQUESTS);
     Thread generatorThread = new Thread(generator);
     generatorThread.start();
 

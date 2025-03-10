@@ -72,6 +72,10 @@ public class RequestSender implements Runnable {
   public void run() {
     try {
       for (int i = 0; i < requestCount; i++) {
+        if(queue.isEmpty()){
+          System.out.println("Queue is empty");
+          return;
+        }
         LiftRideEvent event = queue.take();
 
         // Apply request throttling
@@ -83,6 +87,7 @@ public class RequestSender implements Runnable {
         } else {
           failureCount.increment();
         }
+
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

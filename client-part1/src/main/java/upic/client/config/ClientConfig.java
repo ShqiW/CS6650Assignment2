@@ -2,11 +2,12 @@ package upic.client.config;
 
 public class ClientConfig {
   // Base URL pointing to the AWS load balancer
-  public static final String BASE_URL = "http://cs6650-lb-1744653578.us-west-2.elb.amazonaws.com:8080/server-2.0-SNAPSHOT/skiers";
+  public static final String BASE_URL = System.getProperty("client.baseUrl",
+          "http://34.219.21.156:8080/server-2.0-SNAPSHOT/skiers/");
 //  public static final String BASE_URL = "http://35.91.119.93:8081/skiers"; // server-Springboot
 
   // Performance configuration
-  public static final int TOTAL_REQUESTS = 200000;
+  public static final int TOTAL_REQUESTS = 50000;
   public static final int INITIAL_THREADS = 32;
   public static final int REQUESTS_PER_THREAD = 1000;
   public static final int MAX_RETRY_ATTEMPTS = 5;

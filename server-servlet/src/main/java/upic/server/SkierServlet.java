@@ -8,6 +8,7 @@ import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.google.gson.Gson;
+import upic.server.config.SQSAuthConfig;
 import upic.server.model.ErrorResponse;
 import upic.server.model.LiftRideEvent;
 import upic.server.model.SuccessResponse;
@@ -63,8 +64,8 @@ public class SkierServlet extends HttpServlet {
 
     try {
       // Load configuration from system properties or use defaults
-      String region = ServerConfig.AWS_REGION;
-      queueUrl = ServerConfig.SQS_QUEUE_URL;
+//      String region = ServerConfig.AWS_REGION;
+//      queueUrl = ServerConfig.SQS_QUEUE_URL;
       int corePoolSize = ServerConfig.CORE_POOL_SIZE;
 
       if (queueUrl == null || queueUrl.isEmpty()) {
@@ -72,10 +73,14 @@ public class SkierServlet extends HttpServlet {
         throw new ServletException("Queue URL not specified");
       }
 
-      // Create SQS client
-      sqsClient = AmazonSQSClientBuilder.standard()
-              .withRegion(Regions.fromName(region))
-              .build();
+//      // Create SQS client
+//      sqsClient = AmazonSQSClientBuilder.standard()
+//              .withRegion(Regions.fromName(region))
+//              .build();
+      sqsClient = SQSAuthConfig.getSQSClient();
+      queueUrl = SQSAuthConfig.getQueueUrl();
+      // create SQS client without IAM
+
 
       // Initialize thread pools - use optimal thread count
       int optimalThreads = ServerConfig.getOptimalThreadCount();
