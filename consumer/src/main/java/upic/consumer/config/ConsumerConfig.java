@@ -48,9 +48,9 @@ public class ConsumerConfig {
 
     // Circuit breaker configuration
     public static final int CIRCUIT_FAILURE_THRESHOLD = Integer.parseInt(
-            System.getProperty("consumer.circuitFailureThreshold", "5"));
+            System.getProperty("consumer.circuitFailureThreshold", "100"));
     public static final long CIRCUIT_RESET_TIMEOUT_MS = Long.parseLong(
-            System.getProperty("consumer.circuitResetTimeoutMs", "10000"));
+            System.getProperty("consumer.circuitResetTimeoutMs", "5000"));
 
     /**
      * Calculate optimal thread count based on CPU cores and I/O intensity

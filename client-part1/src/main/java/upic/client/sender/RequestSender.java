@@ -136,7 +136,7 @@ public class RequestSender implements Runnable {
 
         // Server error, should retry
         if (Math.random() < 0.05) { // Only log 5% of errors
-          System.out.println("Server error (" + response.statusCode() + "), retrying...");
+          System.out.println("Client-request Sender: Server error (" + response.statusCode() + "), retrying...");
         }
 
       } catch (java.net.http.HttpTimeoutException e) {
@@ -148,7 +148,7 @@ public class RequestSender implements Runnable {
       } catch (Exception e) {
         // Other exceptions
         if (Math.random() < 0.01) { // Only log 1% of exceptions
-          System.out.println("Request failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+          System.out.println("Client request failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
       }
 
