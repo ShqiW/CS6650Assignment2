@@ -1,6 +1,7 @@
 package upic.client;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,18 +33,16 @@ public class SingleThreadBenchmark {
     generatorThread.start();
 
     // Single thread test
-    CountDownLatch latch = new CountDownLatch(1);
     Thread senderThread = new Thread(new RequestSender(
         eventQueue,
         TEST_REQUESTS,
-        latch,
         successCount,
         failedCount
     ));
     senderThread.start();
 
     try {
-      latch.await();
+      senderThread.wait();
     } catch(InterruptedException e) {
       Thread.currentThread().interrupt();
     } finally {

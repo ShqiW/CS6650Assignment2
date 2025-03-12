@@ -6,7 +6,7 @@ package upic.consumer.config;
  */
 public class RabbitMQConfig {
     // RabbitMQ connection parameters
-    public static final String HOST = System.getProperty("rabbitmq.host", "44.243.202.170");
+    public static final String HOST = System.getProperty("rabbitmq.host", "54.245.22.12");
     public static final int PORT = Integer.parseInt(System.getProperty("rabbitmq.port", "5672"));
     public static final String VIRTUAL_HOST = System.getProperty("rabbitmq.virtualHost", "/");
     public static final String USERNAME = System.getProperty("rabbitmq.username", "admin");
@@ -19,8 +19,8 @@ public class RabbitMQConfig {
     public static final boolean QUEUE_AUTO_DELETE = Boolean.parseBoolean(System.getProperty("rabbitmq.queueAutoDelete", "false"));
 
     // Consumer configuration
-    public static final int PREFETCH_COUNT = Integer.parseInt(System.getProperty("rabbitmq.prefetchCount", "10"));
-    public static final int CONSUMER_THREAD_COUNT = Integer.parseInt(System.getProperty("rabbitmq.consumerThreads", "32"));
+    public static final int PREFETCH_COUNT = Integer.parseInt(System.getProperty("rabbitmq.prefetchCount", "500")); //200-500
+    public static final int CONSUMER_THREAD_COUNT = Integer.parseInt(System.getProperty("rabbitmq.consumerThreads", "64"));  //64-128
     public static final int MAX_CONSUMER_THREAD_COUNT = Integer.parseInt(System.getProperty("rabbitmq.maxConsumerThreads", "128"));
     public static final boolean AUTO_ACK = Boolean.parseBoolean(System.getProperty("rabbitmq.autoAck", "false"));
 

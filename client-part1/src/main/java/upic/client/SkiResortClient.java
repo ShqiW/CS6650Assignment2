@@ -11,6 +11,7 @@ import upic.client.sender.RequestSender;
 
 public class SkiResortClient {
   private final BlockingQueue<LiftRideEvent> eventQueue;
+//  private final BlockingQueue<Boolean> resultQueue;
   private final LongAdder successCount = new LongAdder();
   private final LongAdder failureCount = new LongAdder();
   private final ExecutorService executor;
@@ -40,7 +41,7 @@ public class SkiResortClient {
 
     // Create event queue
     this.eventQueue = new LinkedBlockingQueue<>(totalRequests);
-
+//    this.resultQueue = new LinkedBlockingQueue<>(totalRequests);
     // Create thread pool with custom thread factory for better naming
     this.executor = Executors.newCachedThreadPool(new ThreadFactory() {
       private final AtomicInteger counter = new AtomicInteger(0);
@@ -52,6 +53,7 @@ public class SkiResortClient {
         return thread;
       }
     });
+
 
 
     // Start stats reporting thread
@@ -86,27 +88,47 @@ public class SkiResortClient {
 
       // Initial phase with initialThreads
     System.out.println("Starting initial phase with " + initialThreads + " threads");
-    CountDownLatch initialLatch = new CountDownLatch(initialThreads);
-    Future[] tasks = new Future[initialThreads];
+    Future<?>[] tasks = new Future<?>[initialThreads];
+
     for (int i = 0; i < initialThreads; i++) {
       tasks[i]=executor.submit(new RequestSender(
               eventQueue,
               requestsPerThread,
-              initialLatch,
               successCount,
               failureCount
       ));
     }
     System.out.println("Submited initial phase with " + initialThreads + " threads");
 
-    Arrays.stream(tasks).forEach(task -> {
-      try {
-        task.get();
-      } catch (InterruptedException | ExecutionException e) {
-        System.out.println("Error waiting for task completion: " + e.getMessage());
+    CompletableFuture<?>[] completableTasks = Arrays.stream(tasks)
+            .map(future -> CompletableFuture.supplyAsync(() -> {
+              try {
+                future.get(); // Wait for this task to complete
+                return true;
+              } catch (Exception e) {
+                return false;
+              }
+            }))
+            .toArray(CompletableFuture[]::new);
+
+// This will complete when any of the tasks complete
+    try {
+      CompletableFuture.anyOf(completableTasks).get();
+      System.out.println("At least one task has completed!");
+    } catch (InterruptedException | ExecutionException e) {
+      System.out.println("Error waiting for tasks: " + e.getMessage());
+      Thread.currentThread().interrupt();
+    }
+
+
+//    Arrays.stream(tasks).forEach(task -> {
+//      try {
+//        task.get();
+//      } catch (InterruptedException | ExecutionException e) {
+//        System.out.println("Error waiting for task completion: " + e.getMessage());
 //        Thread.currentThread().interrupt();
-      }
-    });
+//      }
+//    });
 
     try {
 //      initialLatch.await();
@@ -128,18 +150,17 @@ public class SkiResortClient {
           additionalThread = Math.max(1, remainingRequests / 10);
           requestsPerRemaining = remainingRequests / additionalThread;
         }
-
+        additionalThread=32;
         System.out.println(" - Remaining Requests: " + remainingRequests);
         System.out.println(" - Additional Threads: " + additionalThread);
         System.out.println(" - Requests Per Additional Thread: " + requestsPerRemaining);
 
-        CountDownLatch remainingLatch = new CountDownLatch(additionalThread);
         tasks = new Future[additionalThread];
         for (int i = 0; i < additionalThread; i++) {
+//          System.out.println("Creating thread "+i);
           tasks[i]=executor.submit(new RequestSender(
                   eventQueue,
                   requestsPerRemaining,
-                  remainingLatch,
                   successCount,
                   failureCount
           ));
@@ -147,9 +168,11 @@ public class SkiResortClient {
         Arrays.stream(tasks).forEach(task -> {
           try {
             task.get();
-          } catch (InterruptedException | ExecutionException e) {
+          } catch (InterruptedException e) {
             System.out.println("Error waiting for task completion: " + e.getMessage());
             Thread.currentThread().interrupt();
+          } catch (ExecutionException e) {
+              throw new RuntimeException(e);
           }
         });
 //        remainingLatch.await();

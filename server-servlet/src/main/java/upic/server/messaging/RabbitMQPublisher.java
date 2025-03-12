@@ -1,6 +1,7 @@
 package upic.server.messaging;
 
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.MessageProperties;
 import upic.server.config.RabbitMQConfig;
 import upic.server.config.ServerConfig;
@@ -8,7 +9,10 @@ import upic.server.config.ServerConfig;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -16,10 +20,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Publisher for sending messages to RabbitMQ.
- * Supports both individual and batch message publishing.
+ * Supports both individual and batch message publishing with async confirmation.
  */
 public class RabbitMQPublisher {
     private static final Logger LOGGER = Logger.getLogger(RabbitMQPublisher.class.getName());
@@ -37,6 +42,11 @@ public class RabbitMQPublisher {
     // Performance metrics
     private final LongAdder messagesSent = new LongAdder();
     private final LongAdder publishErrors = new LongAdder();
+
+    // Async confirmation tracking
+    private final ConcurrentMap<Long, BatchItem> unconfirmedMessages = new ConcurrentHashMap<>();
+    private final LongAdder confirmedMessages = new LongAdder();
+    private final LongAdder nackMessages = new LongAdder();
 
     /**
      * Creates a new RabbitMQ publisher.
@@ -61,8 +71,16 @@ public class RabbitMQPublisher {
                 TimeUnit.MILLISECONDS
         );
 
+        // Schedule confirmation status reporter
+        scheduledExecutor.scheduleAtFixedRate(
+                this::reportConfirmationStatus,
+                10000,
+                10000,
+                TimeUnit.MILLISECONDS
+        );
+
         LOGGER.info("RabbitMQ publisher initialized with queue: " + queueName +
-                ", channel pool size: " + channelPoolSize);
+                ", channel pool size: " + channelPoolSize + ", async confirmation enabled");
     }
 
     /**
@@ -99,23 +117,22 @@ public class RabbitMQPublisher {
         Channel channel = null;
         try {
             channel = channelPool.getChannel();
-            // Enable publisher confirms for this channel
-            channel.confirmSelect();
+
+            // Setup async confirmation callback
+            setupConfirmCallback(channel);
+
+            long seqNo = channel.getNextPublishSeqNo();
             channel.basicPublish(
                     "", // Default exchange
                     queueName,
                     MessageProperties.PERSISTENT_TEXT_PLAIN, // Make message persistent
                     messageBody.getBytes()
             );
-            // Wait for confirmation (with timeout)
-            boolean confirmed = channel.waitForConfirms(1000);
-            if (confirmed) {
-                messagesSent.increment();
-                return true;
-            } else {
-                publishErrors.increment();
-                return false;
-            }
+
+            // Store message in unconfirmed map for tracking
+            unconfirmedMessages.put(seqNo, new BatchItem("immediate-" + seqNo, messageBody));
+            messagesSent.increment();
+            return true;
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Error publishing immediate message", e);
             publishErrors.increment();
@@ -132,6 +149,76 @@ public class RabbitMQPublisher {
      */
     private void triggerBatchFlush() {
         executorService.submit(this::flushMessageBatch);
+    }
+
+    /**
+     * Sets up an async confirmation callback on the channel.
+     * This ensures messages are properly tracked and confirmed.
+     */
+    private void setupConfirmCallback(Channel channel) throws IOException {
+        channel.confirmSelect(); // Enable publisher confirms
+
+        // Add confirmation listener, only set it once per channel
+        if (!channel.getClass().getName().contains("ConfirmListenerProxy")) {
+            channel.addConfirmListener(new ConfirmListener() {
+                @Override
+                public void handleAck(long deliveryTag, boolean multiple) {
+                    // If multiple is true, confirm all messages up to deliveryTag
+                    if (multiple) {
+                        Set<Long> confirmed = unconfirmedMessages.keySet().stream()
+                                .filter(tag -> tag <= deliveryTag)
+                                .collect(Collectors.toSet());
+
+                        confirmed.forEach(tag -> {
+                            unconfirmedMessages.remove(tag);
+                            confirmedMessages.increment();
+                        });
+                    } else {
+                        // Just confirm this one message
+                        unconfirmedMessages.remove(deliveryTag);
+                        confirmedMessages.increment();
+                    }
+                }
+
+                @Override
+                public void handleNack(long deliveryTag, boolean multiple) {
+                    // Handle rejected messages, we can re-publish them
+                    if (multiple) {
+                        Set<Long> nacked = unconfirmedMessages.keySet().stream()
+                                .filter(tag -> tag <= deliveryTag)
+                                .collect(Collectors.toSet());
+
+                        nacked.forEach(tag -> {
+                            BatchItem item = unconfirmedMessages.remove(tag);
+                            if (item != null) {
+                                // Add message back to batch queue for retry
+                                messageBatch.add(item);
+                                nackMessages.increment();
+                            }
+                        });
+                    } else {
+                        BatchItem item = unconfirmedMessages.remove(deliveryTag);
+                        if (item != null) {
+                            messageBatch.add(item);
+                            nackMessages.increment();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Reports confirmation statistics periodically.
+     * Useful for monitoring the publisher's health.
+     */
+    private void reportConfirmationStatus() {
+        long confirmed = confirmedMessages.sum();
+        long nacked = nackMessages.sum();
+        long pending = unconfirmedMessages.size();
+
+        LOGGER.info("Publisher confirmation status: confirmed=" + confirmed +
+                ", nacked=" + nacked + ", pending=" + pending);
     }
 
     /**
@@ -159,20 +246,23 @@ public class RabbitMQPublisher {
             try {
                 channel = channelPool.getChannel();
 
-                // Use transaction for batch reliability
-                channel.txSelect();
+                // Setup async confirmation for reliable delivery
+                setupConfirmCallback(channel);
 
                 for (BatchItem item : batchToSend) {
+                    // Get sequence number for tracking this message
+                    long nextSeqNo = channel.getNextPublishSeqNo();
+
                     channel.basicPublish(
                             "", // Default exchange
                             queueName,
                             MessageProperties.PERSISTENT_TEXT_PLAIN, // Make message persistent
                             item.messageBody.getBytes()
                     );
-                }
 
-                // Commit the transaction
-                channel.txCommit();
+                    // Store message for confirmation tracking
+                    unconfirmedMessages.put(nextSeqNo, item);
+                }
 
                 // Update metrics
                 messagesSent.add(batchToSend.size());
@@ -181,20 +271,12 @@ public class RabbitMQPublisher {
                     LOGGER.info("Sent batch of " + batchToSend.size() + " messages to RabbitMQ");
                 }
             } catch (Exception e) {
-                // Log error and try to rollback transaction
+                // Log error and handle failure
                 LOGGER.log(Level.WARNING, "Error sending batch to RabbitMQ", e);
                 publishErrors.increment();
 
-                if (channel != null && channel.isOpen()) {
-                    try {
-                        channel.txRollback();
-
-                        // Put messages back to the batch queue for retry
-                        messageBatch.addAll(batchToSend);
-                    } catch (IOException rollbackEx) {
-                        LOGGER.log(Level.SEVERE, "Failed to rollback transaction", rollbackEx);
-                    }
-                }
+                // Put messages back to batch queue for retry
+                messageBatch.addAll(batchToSend);
             } finally {
                 if (channel != null) {
                     channelPool.returnChannel(channel);
@@ -220,11 +302,47 @@ public class RabbitMQPublisher {
     }
 
     /**
+     * Get the number of confirmed messages.
+     * @return The count of successfully confirmed messages
+     */
+    public long getConfirmedMessages() {
+        return confirmedMessages.sum();
+    }
+
+    /**
+     * Get the number of nacked messages.
+     * @return The count of messages that were rejected by the broker
+     */
+    public long getNackMessages() {
+        return nackMessages.sum();
+    }
+
+    /**
+     * Get the current count of messages awaiting confirmation.
+     * @return The number of pending messages
+     */
+    public long getPendingConfirmationCount() {
+        return unconfirmedMessages.size();
+    }
+
+    /**
      * Shutdown the publisher, flushing any pending messages.
      */
     public void shutdown() {
         // Final flush of any messages
         flushMessageBatch();
+
+        // Wait for confirmations to complete (up to 5 seconds)
+        long waitStart = System.currentTimeMillis();
+        while (!unconfirmedMessages.isEmpty() &&
+                System.currentTimeMillis() - waitStart < 5000) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
 
         // Shutdown thread pools
         scheduledExecutor.shutdown();
@@ -246,7 +364,9 @@ public class RabbitMQPublisher {
         // Close the channel pool
         channelPool.close();
 
-        LOGGER.info("RabbitMQ publisher shutdown complete, sent " + messagesSent.sum() + " messages total");
+        LOGGER.info("RabbitMQ publisher shutdown complete, sent " + messagesSent.sum() +
+                " messages, confirmed " + confirmedMessages.sum() +
+                " messages, " + unconfirmedMessages.size() + " messages still pending");
     }
 
     /**

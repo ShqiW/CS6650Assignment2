@@ -6,11 +6,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+
 import upic.client.config.ClientConfig;
 import upic.client.model.LiftRideEvent;
 
@@ -20,7 +19,6 @@ import upic.client.model.LiftRideEvent;
 public class RequestSender implements Runnable {
   private final BlockingQueue<LiftRideEvent> queue;
   private final int requestCount;
-  private final CountDownLatch latch;
   private final Gson gson = new Gson();
   private final LongAdder successCount;
   private final LongAdder failureCount;
@@ -34,14 +32,12 @@ public class RequestSender implements Runnable {
   private final BackoffStrategy backoffStrategy;
 
   // Request throttling to avoid overwhelming the server
-  private final RequestThrottler throttler;
 
-  public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount,
-                               CountDownLatch latch, LongAdder successCount,
-                               LongAdder failureCount) {
+  public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount, LongAdder successCount,
+                       LongAdder failureCount
+  ) {
     this.queue = queue;
     this.requestCount = requestCount;
-    this.latch = latch;
     this.successCount = successCount;
     this.failureCount = failureCount;
 
@@ -58,19 +54,12 @@ public class RequestSender implements Runnable {
             ClientConfig.MAX_BACKOFF_MS,
             ClientConfig.BACKOFF_MULTIPLIER
     );
-
-    // Create request throttler
-    this.throttler = new RequestThrottler(
-            Integer.parseInt(System.getProperty(
-                    "client.requestsPerSecond",
-                    String.valueOf(ClientConfig.REQUESTS_PER_SECOND_LIMIT)
-            ))
-    );
   }
 
   @Override
   public void run() {
     try {
+      ArrayList<Future<?>> response = new ArrayList<>();
       for (int i = 0; i < requestCount; i++) {
         if(queue.isEmpty()){
           System.out.println("Queue is empty");
@@ -78,22 +67,13 @@ public class RequestSender implements Runnable {
         }
         LiftRideEvent event = queue.take();
 
-        // Apply request throttling
-        throttler.throttle();
-
-        boolean success = sendRequest(event);
-        if (success) {
-          successCount.increment();
-        } else {
-          failureCount.increment();
-        }
+        sendRequest(event);
 
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-    } finally {
-      latch.countDown();
     }
+
   }
 
   private boolean sendRequest(LiftRideEvent event) {
@@ -122,6 +102,7 @@ public class RequestSender implements Runnable {
 
         // Check response status code
         if (response.statusCode() == 201 || response.statusCode() == 200) {
+          successCount.increment();
           return true;
         }
 
@@ -131,6 +112,7 @@ public class RequestSender implements Runnable {
           if (Math.random() < 0.01) { // Only log 1% of errors to reduce noise
             System.out.println("Client error (" + response.statusCode() + "): " + response.body());
           }
+          failureCount.increment();
           return false;
         }
 
@@ -161,10 +143,12 @@ public class RequestSender implements Runnable {
           TimeUnit.MILLISECONDS.sleep(waitTime);
         } catch (InterruptedException ie) {
           Thread.currentThread().interrupt();
+          failureCount.increment();
           return false;
         }
       }
     }
+    failureCount.increment();
     return false;
   }
 
