@@ -49,4 +49,5 @@ public class RabbitMQConfig {
         // Assuming a 1:10 ratio of service to wait time for RabbitMQ operations
         return Math.min(MAX_CONSUMER_THREAD_COUNT, availableProcessors * 11);
     }
+
 }
