@@ -137,17 +137,10 @@ The client consists of SkiResortClient (main class), EventGenerator, RequestSend
 - High queue threshold: 10000
 - Low queue threshold: 100
 
-## 7. Load Balancing Implementation
 
-This system uses AWS Elastic Load Balancer to implement load balancing, forming a server cluster with 4 EC2 instances. After implementing load balancing, the system's overall throughput significantly improved:
+## 7. System Test Results
 
-- Single server instance: ~800-1000 req/s
-- 2-server load balancing: ~1500-1800 req/s
-- 4-server load balancing: ~2800-3200 req/s
-
-## 8. System Test Results
-
-### 8.1 Single Server Performance Test
+### 7.1 Single Server Performance Test
 
 **Test Conditions:**
 - 50,000 requests
@@ -161,7 +154,7 @@ This system uses AWS Elastic Load Balancer to implement load balancing, forming 
 - Throughput: 854.39 req/s
 - Maximum queue depth: ~8,000
 
-### 8.2 Load Balanced Performance Test (4 servers)
+### 7.2 Load Balanced Performance Test (4 servers)
 
 **Test Conditions:**
 - 200,000 requests
@@ -175,3 +168,18 @@ This system uses AWS Elastic Load Balancer to implement load balancing, forming 
 - Throughput: 3218.48 req/s
 - Maximum queue depth: ~3,500
 - Consumption rate: ~3200 msg/s
+
+## 8. Screenshots
+### 8.1 Single Server
+
+
+
+
+
+
+### 8.2 Load Balanced Performance
+
+
+
+
+
