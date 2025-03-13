@@ -146,14 +146,17 @@ java -jar client-part1-1.0-SNAPSHOT-jar-with-dependencies.jar 32 200000 1000 fal
 
 ## 8. Screenshots
 ### 8.1 Single Server
+![](util/SingleServerRMQ.jpg)
 
+![](util/SingleServerThroughput.png)
 
 
 
 
 
 ### 8.2 Load Balanced Performance
-
+![](util/LB4ServerRMQ.jpg)
+![](util/LB4ServerThroughput.jpg)
 
 
 
