@@ -137,6 +137,12 @@ public static final String HOST = System.getProperty("rabbitmq.host", "34.219.55
 public static final int PORT = Integer.parseInt(System.getProperty("rabbitmq.port", "5672"));
 ```
 
+### 7.3 Run client
+```
+java -jar <path>/client-part1-1.0-SNAPSHOT-jar-with-dependencies.jar <initial thread for stage 1> <total requests> <queue size for statge 1> <run single thread benchmark>
+// Usage
+java -jar client-part1-1.0-SNAPSHOT-jar-with-dependencies.jar 32 200000 1000 false
+```
 
 ## 8. Screenshots
 ### 8.1 Single Server
