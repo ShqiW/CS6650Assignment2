@@ -29,7 +29,7 @@ public class ClientConfig {
   // Rate limiting configuration
   public static final int REQUESTS_PER_SECOND_LIMIT = 500; //500-1000
 
-  public static final int ADDITIONAL_THREAD = 30; //100-200
+  public static final int ADDITIONAL_THREAD = 100; //100-200
 
   // Dynamic thread calculation
   public static int getOptimalThreadCount() {
