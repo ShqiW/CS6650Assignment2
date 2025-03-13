@@ -1,6 +1,7 @@
 package upic.server;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import upic.server.config.ServerConfig;
 import upic.server.messaging.RabbitMQPublisher;
 import upic.server.model.ErrorResponse;
@@ -164,35 +165,57 @@ public class SkierServlet extends HttpServlet {
       return;
     }
 
+    // Parse and validate JSON payload
+    BufferedReader reader = req.getReader();
+    LiftRideEvent liftRide;
+
     try {
-      // Parse and validate JSON payload
-      BufferedReader reader = req.getReader();
-      LiftRideEvent liftRide = gson.fromJson(reader, LiftRideEvent.class);
+      liftRide = gson.fromJson(reader, LiftRideEvent.class);
 
-      if (!isValidLiftRide(liftRide)) {
+      // Handle null liftRide (which can happen if JSON is valid but empty)
+      if (liftRide == null) {
         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        ErrorResponse error = new ErrorResponse("Invalid lift ride data", HttpServletResponse.SC_BAD_REQUEST);
+        ErrorResponse error = new ErrorResponse("Empty or invalid JSON payload", HttpServletResponse.SC_BAD_REQUEST);
         writer.write(gson.toJson(error));
         validationErrors.increment();
         asyncContext.complete();
         return;
       }
+    } catch (JsonSyntaxException e) {
+      // CHANGED: Explicitly handle JSON parsing errors
+      resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      ErrorResponse error = new ErrorResponse("Invalid JSON format: " + e.getMessage(), HttpServletResponse.SC_BAD_REQUEST);
+      writer.write(gson.toJson(error));
+      validationErrors.increment();
+      asyncContext.complete();
+      return;
+    }
 
-      // Validate URL parameters match JSON body
-      if (liftRide.getResortId() != urlResortId ||
-              liftRide.getSeasonId() != urlSeasonId ||
-              liftRide.getDayId() != urlDayId ||
-              liftRide.getSkierId() != urlSkierId) {
-        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        ErrorResponse error = new ErrorResponse(
-                "Mismatch between URL parameters and JSON body",
-                HttpServletResponse.SC_BAD_REQUEST);
-        writer.write(gson.toJson(error));
-        validationErrors.increment();
-        asyncContext.complete();
-        return;
-      }
+    if (!isValidLiftRide(liftRide)) {
+      resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      ErrorResponse error = new ErrorResponse("Invalid lift ride data", HttpServletResponse.SC_BAD_REQUEST);
+      writer.write(gson.toJson(error));
+      validationErrors.increment();
+      asyncContext.complete();
+      return;
+    }
 
+    // Validate URL parameters match JSON body
+    if (liftRide.getResortId() != urlResortId ||
+            liftRide.getSeasonId() != urlSeasonId ||
+            liftRide.getDayId() != urlDayId ||
+            liftRide.getSkierId() != urlSkierId) {
+      resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+      ErrorResponse error = new ErrorResponse(
+              "Mismatch between URL parameters and JSON body",
+              HttpServletResponse.SC_BAD_REQUEST);
+      writer.write(gson.toJson(error));
+      validationErrors.increment();
+      asyncContext.complete();
+      return;
+    }
+
+    try {
       // Send message to RabbitMQ
       String messageBody = gson.toJson(liftRide);
       boolean publishSuccess = publisher.publishMessage(requestId, messageBody);
@@ -218,12 +241,11 @@ public class SkierServlet extends HttpServlet {
       asyncContext.complete();
 
     } catch (Exception e) {
-      // Handle JSON parsing or other exceptions
-      resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-      ErrorResponse error = new ErrorResponse("Invalid request format: " + e.getMessage(),
-              HttpServletResponse.SC_BAD_REQUEST);
+      // Handle other exceptions
+      resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      ErrorResponse error = new ErrorResponse("Server error: " + e.getMessage(),
+              HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       writer.write(gson.toJson(error));
-      validationErrors.increment();
       asyncContext.complete();
     }
   }

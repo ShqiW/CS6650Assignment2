@@ -141,19 +141,19 @@ public class SkiResortClient {
 
       if (remainingRequests > 0) {
         // Calculate optimal thread count based on system resources
-//        int additionalThread = ClientConfig.ADDITIONAL_THREAD;
-        int additionalThread = ClientConfig.getOptimalThreadCount();
+        int additionalThread = ClientConfig.ADDITIONAL_THREAD;
+//        int additionalThread = ClientConfig.getOptimalThreadCount();
         int requestsPerRemaining = remainingRequests / additionalThread;
-
-        // Ensure each thread gets at least 10 requests
-        if (requestsPerRemaining < 10) {
-          additionalThread = Math.max(1, remainingRequests / 10);
-          requestsPerRemaining = remainingRequests / additionalThread;
-        }
-        additionalThread=32;
+//
+//        // Ensure each thread gets at least 10 requests
+//        if (requestsPerRemaining < 10) {
+//          additionalThread = Math.max(1, remainingRequests / 10);
+//          requestsPerRemaining = remainingRequests / additionalThread;
+//        }
+//        additionalThread=32;
         System.out.println(" - Remaining Requests: " + remainingRequests);
         System.out.println(" - Additional Threads: " + additionalThread);
-        System.out.println(" - Requests Per Additional Thread: " + requestsPerRemaining);
+        System.out.println(" - Requests Per Additional Thread: " + remainingRequests / additionalThread);
 
         tasks = new Future[additionalThread];
         for (int i = 0; i < additionalThread; i++) {
