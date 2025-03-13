@@ -124,60 +124,17 @@ The client consists of SkiResortClient (main class), EventGenerator, RequestSend
 - **Connection Pooling**: Channel pool reduces connection resource creation and destruction overhead
 - **Parameter Optimization**: Tuning of key parameters for server and consumer
 
-### 6.2 Main Configuration Parameters
-
-**Server Configuration:**
-- RabbitMQ channel pool size: 200
-- Batch size: 100
-- Batch flush interval: 50ms
-
-**Consumer Configuration:**
-- Prefetch count: 500
-- Consumer thread count: 128
-- High queue threshold: 10000
-- Low queue threshold: 100
 
 
-## 7. System Test Results
-
-### 7.1 Single Server Performance Test
-
-**Test Conditions:**
-- 50,000 requests
-- 32 initial threads
-- 1,000 requests per thread
-
-**Results:**
-- Total requests: 50,000
-- Successful requests: 50,000
-- Wall clock time: 58,532 ms
-- Throughput: 854.39 req/s
-- Maximum queue depth: ~8,000
-
-### 7.2 Load Balanced Performance Test (4 servers)
-
-**Test Conditions:**
-- 200,000 requests
-- 64 initial threads
-- 1,000 requests per thread
-
-**Results:**
-- Total requests: 200,000
-- Successful requests: 200,000
-- Wall clock time: 62,147 ms
-- Throughput: 3218.48 req/s
-- Maximum queue depth: ~3,500
-- Consumption rate: ~3200 msg/s
-
-## 8. Screenshots
-### 8.1 Single Server
+## 7. Screenshots
+### 7.1 Single Server
 
 
 
 
 
 
-### 8.2 Load Balanced Performance
+### 7.2 Load Balanced Performance
 
 
 
