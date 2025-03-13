@@ -28,12 +28,7 @@ public class RequestSender implements Runnable {
   // Improved HTTP client with better connection management
   private final HttpClient client;
 
-  // Backoff strategy for retries
-  private final BackoffStrategy backoffStrategy;
-
   private final HttpRequest.Builder requestTemplate;
-
-  // Request throttling to avoid overwhelming the server
 
   public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount, LongAdder successCount,
                        LongAdder failureCount
@@ -50,17 +45,9 @@ public class RequestSender implements Runnable {
             .version(ClientConfig.USE_HTTP2 ? HttpClient.Version.HTTP_2 : HttpClient.Version.HTTP_1_1)
             .build();
 
-    // Create exponential backoff strategy
-    this.backoffStrategy = new ExponentialBackoffStrategy(
-            ClientConfig.INITIAL_BACKOFF_MS,
-            ClientConfig.MAX_BACKOFF_MS,
-            ClientConfig.BACKOFF_MULTIPLIER
-    );
     this.requestTemplate = HttpRequest.newBuilder()
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS));
-
-
   }
 
   @Override
@@ -69,18 +56,16 @@ public class RequestSender implements Runnable {
       ArrayList<Future<?>> response = new ArrayList<>();
       for (int i = 0; i < requestCount; i++) {
         if(queue.isEmpty()){
-          System.out.println("Queue is empty");
+//          System.out.println("Queue is empty");
           return;
         }
         LiftRideEvent event = queue.take();
 
         sendRequest(event);
-
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
-
   }
 
   private boolean sendRequest(LiftRideEvent event) {
@@ -96,15 +81,6 @@ public class RequestSender implements Runnable {
             .uri(URI.create(url))
             .POST(HttpRequest.BodyPublishers.ofString(json))
             .build();
-//    HttpRequest request = HttpRequest.newBuilder()
-//            .uri(URI.create(url))
-//            .header("Content-Type", "application/json")
-//            .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS))
-//            .POST(HttpRequest.BodyPublishers.ofString(json))
-//            .build();
-
-    // Reset backoff strategy
-    backoffStrategy.reset();
 
     for (int attempt = 0; attempt < ClientConfig.MAX_RETRY_ATTEMPTS; attempt++) {
       try {
@@ -145,18 +121,9 @@ public class RequestSender implements Runnable {
         }
       }
 
-      // Don't wait after the last attempt
+      // Just retry immediately without any delay
       if (attempt < ClientConfig.MAX_RETRY_ATTEMPTS - 1) {
         retryCount.increment();
-        try {
-          // Use backoff strategy to calculate wait time
-          long waitTime = backoffStrategy.nextBackoffMillis();
-          TimeUnit.MILLISECONDS.sleep(waitTime);
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-          failureCount.increment();
-          return false;
-        }
       }
     }
     failureCount.increment();
@@ -170,49 +137,6 @@ public class RequestSender implements Runnable {
 
   public long getRetryCount() {
     return retryCount.sum();
-  }
-
-  /**
-   * Backoff strategy interface
-   */
-  interface BackoffStrategy {
-    void reset();
-    long nextBackoffMillis();
-  }
-
-  /**
-   * Exponential backoff strategy implementation
-   */
-  static class ExponentialBackoffStrategy implements BackoffStrategy {
-    private final long initialDelayMs;
-    private final long maxDelayMs;
-    private final double multiplier;
-    private long currentDelayMs;
-
-    public ExponentialBackoffStrategy(long initialDelayMs, long maxDelayMs, double multiplier) {
-      this.initialDelayMs = initialDelayMs;
-      this.maxDelayMs = maxDelayMs;
-      this.multiplier = multiplier;
-      this.currentDelayMs = initialDelayMs;
-    }
-
-    @Override
-    public void reset() {
-      currentDelayMs = initialDelayMs;
-    }
-
-    @Override
-    public long nextBackoffMillis() {
-      long delay = currentDelayMs;
-      // Calculate new delay for next time
-      currentDelayMs = Math.min(
-              maxDelayMs,
-              (long)(currentDelayMs * multiplier)
-      );
-      // Add jitter to avoid thundering herd (0.5-1.5x)
-      double jitter = 0.5 + Math.random();
-      return (long)(delay * jitter);
-    }
   }
 
   /**
