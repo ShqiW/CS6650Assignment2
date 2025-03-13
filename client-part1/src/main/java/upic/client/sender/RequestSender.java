@@ -6,11 +6,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+
 import upic.client.config.ClientConfig;
 import upic.client.model.LiftRideEvent;
 
@@ -20,7 +19,6 @@ import upic.client.model.LiftRideEvent;
 public class RequestSender implements Runnable {
   private final BlockingQueue<LiftRideEvent> queue;
   private final int requestCount;
-  private final CountDownLatch latch;
   private final Gson gson = new Gson();
   private final LongAdder successCount;
   private final LongAdder failureCount;
@@ -30,18 +28,13 @@ public class RequestSender implements Runnable {
   // Improved HTTP client with better connection management
   private final HttpClient client;
 
-  // Backoff strategy for retries
-  private final BackoffStrategy backoffStrategy;
+  private final HttpRequest.Builder requestTemplate;
 
-  // Request throttling to avoid overwhelming the server
-  private final RequestThrottler throttler;
-
-  public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount,
-                               CountDownLatch latch, LongAdder successCount,
-                               LongAdder failureCount) {
+  public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount, LongAdder successCount,
+                       LongAdder failureCount
+  ) {
     this.queue = queue;
     this.requestCount = requestCount;
-    this.latch = latch;
     this.successCount = successCount;
     this.failureCount = failureCount;
 
@@ -52,47 +45,26 @@ public class RequestSender implements Runnable {
             .version(ClientConfig.USE_HTTP2 ? HttpClient.Version.HTTP_2 : HttpClient.Version.HTTP_1_1)
             .build();
 
-    // Create exponential backoff strategy
-    this.backoffStrategy = new ExponentialBackoffStrategy(
-            ClientConfig.INITIAL_BACKOFF_MS,
-            ClientConfig.MAX_BACKOFF_MS,
-            ClientConfig.BACKOFF_MULTIPLIER
-    );
-
-    // Create request throttler
-    this.throttler = new RequestThrottler(
-            Integer.parseInt(System.getProperty(
-                    "client.requestsPerSecond",
-                    String.valueOf(ClientConfig.REQUESTS_PER_SECOND_LIMIT)
-            ))
-    );
+    this.requestTemplate = HttpRequest.newBuilder()
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS));
   }
 
   @Override
   public void run() {
     try {
+      ArrayList<Future<?>> response = new ArrayList<>();
       for (int i = 0; i < requestCount; i++) {
         if(queue.isEmpty()){
-          System.out.println("Queue is empty");
+//          System.out.println("Queue is empty");
           return;
         }
         LiftRideEvent event = queue.take();
 
-        // Apply request throttling
-        throttler.throttle();
-
-        boolean success = sendRequest(event);
-        if (success) {
-          successCount.increment();
-        } else {
-          failureCount.increment();
-        }
-
+        sendRequest(event);
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-    } finally {
-      latch.countDown();
     }
   }
 
@@ -105,15 +77,10 @@ public class RequestSender implements Runnable {
             event.getDayId(),
             event.getSkierId());
 
-    HttpRequest request = HttpRequest.newBuilder()
+    HttpRequest request = requestTemplate.copy()
             .uri(URI.create(url))
-            .header("Content-Type", "application/json")
-            .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS))
             .POST(HttpRequest.BodyPublishers.ofString(json))
             .build();
-
-    // Reset backoff strategy
-    backoffStrategy.reset();
 
     for (int attempt = 0; attempt < ClientConfig.MAX_RETRY_ATTEMPTS; attempt++) {
       try {
@@ -122,6 +89,7 @@ public class RequestSender implements Runnable {
 
         // Check response status code
         if (response.statusCode() == 201 || response.statusCode() == 200) {
+          successCount.increment();
           return true;
         }
 
@@ -131,12 +99,13 @@ public class RequestSender implements Runnable {
           if (Math.random() < 0.01) { // Only log 1% of errors to reduce noise
             System.out.println("Client error (" + response.statusCode() + "): " + response.body());
           }
+          failureCount.increment();
           return false;
         }
 
         // Server error, should retry
         if (Math.random() < 0.05) { // Only log 5% of errors
-          System.out.println("Server error (" + response.statusCode() + "), retrying...");
+          System.out.println("Client-request Sender: Server error (" + response.statusCode() + "), retrying...");
         }
 
       } catch (java.net.http.HttpTimeoutException e) {
@@ -148,23 +117,16 @@ public class RequestSender implements Runnable {
       } catch (Exception e) {
         // Other exceptions
         if (Math.random() < 0.01) { // Only log 1% of exceptions
-          System.out.println("Request failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+          System.out.println("Client request failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
       }
 
-      // Don't wait after the last attempt
+      // Just retry immediately without any delay
       if (attempt < ClientConfig.MAX_RETRY_ATTEMPTS - 1) {
         retryCount.increment();
-        try {
-          // Use backoff strategy to calculate wait time
-          long waitTime = backoffStrategy.nextBackoffMillis();
-          TimeUnit.MILLISECONDS.sleep(waitTime);
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-          return false;
-        }
       }
     }
+    failureCount.increment();
     return false;
   }
 
@@ -175,49 +137,6 @@ public class RequestSender implements Runnable {
 
   public long getRetryCount() {
     return retryCount.sum();
-  }
-
-  /**
-   * Backoff strategy interface
-   */
-  interface BackoffStrategy {
-    void reset();
-    long nextBackoffMillis();
-  }
-
-  /**
-   * Exponential backoff strategy implementation
-   */
-  static class ExponentialBackoffStrategy implements BackoffStrategy {
-    private final long initialDelayMs;
-    private final long maxDelayMs;
-    private final double multiplier;
-    private long currentDelayMs;
-
-    public ExponentialBackoffStrategy(long initialDelayMs, long maxDelayMs, double multiplier) {
-      this.initialDelayMs = initialDelayMs;
-      this.maxDelayMs = maxDelayMs;
-      this.multiplier = multiplier;
-      this.currentDelayMs = initialDelayMs;
-    }
-
-    @Override
-    public void reset() {
-      currentDelayMs = initialDelayMs;
-    }
-
-    @Override
-    public long nextBackoffMillis() {
-      long delay = currentDelayMs;
-      // Calculate new delay for next time
-      currentDelayMs = Math.min(
-              maxDelayMs,
-              (long)(currentDelayMs * multiplier)
-      );
-      // Add jitter to avoid thundering herd (0.5-1.5x)
-      double jitter = 0.5 + Math.random();
-      return (long)(delay * jitter);
-    }
   }
 
   /**

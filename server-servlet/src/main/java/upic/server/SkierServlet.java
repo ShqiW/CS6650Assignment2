@@ -1,26 +1,16 @@
 package upic.server;
 
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
 import com.google.gson.Gson;
-import upic.server.config.SQSAuthConfig;
+import upic.server.config.ServerConfig;
+import upic.server.messaging.RabbitMQPublisher;
 import upic.server.model.ErrorResponse;
 import upic.server.model.LiftRideEvent;
 import upic.server.model.SuccessResponse;
-import upic.server.config.ServerConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,8 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet(urlPatterns = "/skiers/*", asyncSupported = true)
 public class SkierServlet extends HttpServlet {
   private final Gson gson = new Gson();
-  private AmazonSQS sqsClient;
-  private String queueUrl;
+  private RabbitMQPublisher publisher;
   private ExecutorService executorService;
   private ScheduledExecutorService scheduledExecutor;
 
@@ -46,13 +35,8 @@ public class SkierServlet extends HttpServlet {
   private final LongAdder requestsProcessed = new LongAdder();
   private final LongAdder requestsFailed = new LongAdder();
   private final LongAdder messagesSent = new LongAdder();
-  private final LongAdder sqsErrors = new LongAdder();
+  private final LongAdder messagingErrors = new LongAdder();
   private final LongAdder validationErrors = new LongAdder();
-
-  // Message batching
-  private final ConcurrentLinkedQueue<BatchItem> messageBatch = new ConcurrentLinkedQueue<>();
-  private static final int BATCH_SIZE = 10;
-  private static final long BATCH_FLUSH_INTERVAL_MS = 100;
 
   // Health metrics
   private final Runtime runtime = Runtime.getRuntime();
@@ -63,24 +47,18 @@ public class SkierServlet extends HttpServlet {
     super.init();
 
     try {
-      // Load configuration from system properties or use defaults
-//      String region = ServerConfig.AWS_REGION;
-//      queueUrl = ServerConfig.SQS_QUEUE_URL;
+      // Load configuration
       int corePoolSize = ServerConfig.CORE_POOL_SIZE;
+      int channelPoolSize = ServerConfig.RABBITMQ_CHANNEL_POOL_SIZE;
 
-      if (queueUrl == null || queueUrl.isEmpty()) {
-        getServletContext().log("Queue URL not specified, cannot initialize SQS client");
-        throw new ServletException("Queue URL not specified");
+      // Initialize RabbitMQ publisher
+      try {
+        publisher = new RabbitMQPublisher(channelPoolSize);
+        getServletContext().log("RabbitMQ publisher initialized");
+      } catch (Exception e) {
+        getServletContext().log("Failed to initialize RabbitMQ publisher: " + e.getMessage(), e);
+        throw new ServletException("Failed to initialize RabbitMQ publisher", e);
       }
-
-//      // Create SQS client
-//      sqsClient = AmazonSQSClientBuilder.standard()
-//              .withRegion(Regions.fromName(region))
-//              .build();
-      sqsClient = SQSAuthConfig.getSQSClient();
-      queueUrl = SQSAuthConfig.getQueueUrl();
-      // create SQS client without IAM
-
 
       // Initialize thread pools - use optimal thread count
       int optimalThreads = ServerConfig.getOptimalThreadCount();
@@ -88,14 +66,6 @@ public class SkierServlet extends HttpServlet {
 
       executorService = Executors.newFixedThreadPool(optimalThreads);
       scheduledExecutor = Executors.newScheduledThreadPool(2);
-
-      // Schedule batch message processor
-      scheduledExecutor.scheduleAtFixedRate(
-              this::flushMessageBatch,
-              BATCH_FLUSH_INTERVAL_MS,
-              BATCH_FLUSH_INTERVAL_MS,
-              TimeUnit.MILLISECONDS
-      );
 
       // Schedule stats reporting
       scheduledExecutor.scheduleAtFixedRate(
@@ -105,7 +75,7 @@ public class SkierServlet extends HttpServlet {
               TimeUnit.MILLISECONDS
       );
 
-      getServletContext().log("SQS client and thread pools created. Queue URL: " + queueUrl);
+      getServletContext().log("SkierServlet initialized successfully");
 
     } catch (Exception e) {
       getServletContext().log("Initialization failed: " + e.getMessage());
@@ -223,31 +193,26 @@ public class SkierServlet extends HttpServlet {
         return;
       }
 
-      // Check queue URL
-      if (queueUrl == null || queueUrl.isEmpty()) {
+      // Send message to RabbitMQ
+      String messageBody = gson.toJson(liftRide);
+      boolean publishSuccess = publisher.publishMessage(requestId, messageBody);
+
+      if (publishSuccess) {
+        messagesSent.increment();
+
+        // Return success response
+        resp.setStatus(HttpServletResponse.SC_CREATED);
+        SuccessResponse success = new SuccessResponse("Lift ride recorded successfully, request ID: " + requestId);
+        writer.write(gson.toJson(success));
+      } else {
+        // Handle publish failure
+        messagingErrors.increment();
         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         ErrorResponse error = new ErrorResponse(
-                "Queue URL not configured",
+                "Failed to publish message to queue",
                 HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         writer.write(gson.toJson(error));
-        asyncContext.complete();
-        return;
       }
-
-      // Send message to SQS using batch mechanism
-      String messageBody = gson.toJson(liftRide);
-      BatchItem batchItem = new BatchItem(requestId, messageBody);
-      messageBatch.add(batchItem);
-
-      // If batch size reached, trigger flush in separate thread
-      if (messageBatch.size() >= ServerConfig.BATCH_SIZE) {
-        triggerBatchFlush();
-      }
-
-      // Return success response
-      resp.setStatus(HttpServletResponse.SC_CREATED);
-      SuccessResponse success = new SuccessResponse("Lift ride recorded successfully, request ID: " + requestId);
-      writer.write(gson.toJson(success));
 
       // Complete async context
       asyncContext.complete();
@@ -281,77 +246,19 @@ public class SkierServlet extends HttpServlet {
     }
   }
 
-  private void triggerBatchFlush() {
-    // Schedule immediate batch flush in a separate thread
-    scheduledExecutor.execute(this::flushMessageBatch);
-  }
-
-  private synchronized void flushMessageBatch() {
-    if (messageBatch.isEmpty()) {
-      return;
-    }
-
-    try {
-      List<SendMessageBatchRequestEntry> entries = new ArrayList<>(BATCH_SIZE);
-      int count = 0;
-
-      // Take up to BATCH_SIZE messages
-      while (!messageBatch.isEmpty() && count < BATCH_SIZE) {
-        BatchItem item = messageBatch.poll();
-        if (item != null) {
-          entries.add(new SendMessageBatchRequestEntry(item.id, item.messageBody));
-          count++;
-        }
-      }
-
-      if (!entries.isEmpty()) {
-        // Send batch request
-        SendMessageBatchRequest batchRequest = new SendMessageBatchRequest(queueUrl, entries);
-        sqsClient.sendMessageBatch(batchRequest);
-        messagesSent.add(entries.size());
-
-        if (Math.random() < 0.01) { // Log 1% of batch sends
-          getServletContext().log("Sent batch of " + entries.size() + " messages to SQS");
-        }
-      }
-    } catch (Exception e) {
-      // Log error and add messages back to queue
-      getServletContext().log("Error sending batch to SQS: " + e.getMessage());
-      sqsErrors.increment();
-    }
-  }
-
-  private void sendIndividualMessage(String messageBody) {
-    try {
-      SendMessageRequest sendMsgRequest = new SendMessageRequest()
-              .withQueueUrl(queueUrl)
-              .withMessageBody(messageBody);
-
-      SendMessageResult result = sqsClient.sendMessage(sendMsgRequest);
-      messagesSent.increment();
-
-      if (Math.random() < 0.001) { // Log 0.1% of messages
-        getServletContext().log("Message sent to SQS successfully, message ID: " + result.getMessageId());
-      }
-    } catch (Exception e) {
-      getServletContext().log("Error sending message to SQS: " + e.getMessage());
-      sqsErrors.increment();
-    }
-  }
-
   private void reportStats() {
     long received = requestsReceived.sum();
     long processed = requestsProcessed.sum();
     long failed = requestsFailed.sum();
     long sent = messagesSent.sum();
-    long sqs_errors = sqsErrors.sum();
+    long messaging_errors = messagingErrors.sum();
     long validation_errors = validationErrors.sum();
     long usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
     long maxMemoryMB = runtime.maxMemory() / (1024 * 1024);
 
     getServletContext().log(String.format(
-            "STATS: Received=%d, Processed=%d, Failed=%d, Sent=%d, SQS_Errors=%d, Validation_Errors=%d, Memory=%dMB/%dMB",
-            received, processed, failed, sent, sqs_errors, validation_errors, usedMemoryMB, maxMemoryMB
+            "STATS: Received=%d, Processed=%d, Failed=%d, Sent=%d, Messaging_Errors=%d, Validation_Errors=%d, Memory=%dMB/%dMB",
+            received, processed, failed, sent, messaging_errors, validation_errors, usedMemoryMB, maxMemoryMB
     ));
   }
 
@@ -405,23 +312,13 @@ public class SkierServlet extends HttpServlet {
     }
   }
 
-  /**
-   * Class to hold batch message items
-   */
-  private static class BatchItem {
-    final String id;
-    final String messageBody;
-
-    BatchItem(String id, String messageBody) {
-      this.id = id;
-      this.messageBody = messageBody;
-    }
-  }
-
   @Override
   public void destroy() {
-    // Flush any remaining messages
-    flushMessageBatch();
+    // Shutdown publisher
+    if (publisher != null) {
+      publisher.shutdown();
+      getServletContext().log("RabbitMQ publisher closed");
+    }
 
     // Shutdown thread pools
     if (executorService != null) {
@@ -444,12 +341,6 @@ public class SkierServlet extends HttpServlet {
       } catch (InterruptedException e) {
         scheduledExecutor.shutdownNow();
       }
-    }
-
-    // Close SQS client
-    if (sqsClient != null) {
-      sqsClient.shutdown();
-      getServletContext().log("SQS client closed");
     }
 
     super.destroy();

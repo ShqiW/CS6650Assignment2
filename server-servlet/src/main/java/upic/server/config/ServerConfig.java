@@ -1,4 +1,3 @@
-
 package upic.server.config;
 
 /**
@@ -6,10 +5,18 @@ package upic.server.config;
  * Centralizes all configuration parameters to make tuning easier.
  */
 public class ServerConfig {
-    // AWS SQS configuration
-    public static final String AWS_REGION = System.getProperty("aws.region", "us-west-2");
-    public static final String SQS_QUEUE_URL = System.getProperty("aws.queueUrl",
-            "https://sqs.us-west-2.amazonaws.com/145832436892/ski-lift-events");
+//    // AWS SQS configuration (kept for backward compatibility)
+//    public static final String AWS_REGION = System.getProperty("aws.region", "us-west-2");
+//    public static final String SQS_QUEUE_URL = System.getProperty("aws.queueUrl",
+//            "https://sqs.us-west-2.amazonaws.com/145832436892/ski-lift-events");
+
+    // RabbitMQ specific configuration
+    public static final int RABBITMQ_CHANNEL_POOL_SIZE = Integer.parseInt(
+            System.getProperty("rabbitmq.channelPoolSize", "200"));  //100-200
+    public static final int RABBITMQ_PREFETCH_COUNT = Integer.parseInt(
+            System.getProperty("rabbitmq.prefetchCount", "10"));
+    public static final boolean USE_RABBITMQ = Boolean.parseBoolean(
+            System.getProperty("messaging.useRabbitMQ", "true"));
 
     // Thread pool configuration
     public static final int CORE_POOL_SIZE = Integer.parseInt(
@@ -25,11 +32,11 @@ public class ServerConfig {
     public static final int ASYNC_TIMEOUT = Integer.parseInt(
             System.getProperty("server.asyncTimeout", "30000"));
 
-    // SQS batch processing configuration
+    // Message batch processing configuration
     public static final int BATCH_SIZE = Integer.parseInt(
-            System.getProperty("server.batchSize", "10"));
+            System.getProperty("server.batchSize", "100"));  //50-100
     public static final long BATCH_FLUSH_INTERVAL_MS = Long.parseLong(
-            System.getProperty("server.batchFlushInterval", "100"));
+            System.getProperty("server.batchFlushInterval", "50")); //decrease for high frequency
 
     // Performance monitoring configuration
     public static final long STATS_INTERVAL_MS = Long.parseLong(
@@ -62,6 +69,7 @@ public class ServerConfig {
         int threadsByCpu = processors * 10;
 
         return Math.min(MAX_POOL_SIZE, Math.min(threadsByCpu, threadsByMemory));
+//        return 500;
     }
 
     /**
