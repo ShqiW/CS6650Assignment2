@@ -124,17 +124,29 @@ The client consists of SkiResortClient (main class), EventGenerator, RequestSend
 - **Connection Pooling**: Channel pool reduces connection resource creation and destruction overhead
 - **Parameter Optimization**: Tuning of key parameters for server and consumer
 
+## 7. Use Guidance
+### 7.1 Client
+Update BASE_URL in ClientConfig to change server or Loadbalancer address
+```
+public static final String BASE_URL = System.getProperty("client.baseUrl", "http://CS6650-LB-4server-302525209.us-west-2.elb.amazonaws.com:8080/server-2.0-SNAPSHOT/skiers");
+```
+### 7.2 Servlet and Consumer
+Update HOST in RabbitMQConfig to use the correct RabbitMQ instance address. Also change the port if not using 5672
+```
+public static final String HOST = System.getProperty("rabbitmq.host", "34.219.55.2");
+public static final int PORT = Integer.parseInt(System.getProperty("rabbitmq.port", "5672"));
+```
 
 
-## 7. Screenshots
-### 7.1 Single Server
+## 8. Screenshots
+### 8.1 Single Server
 
 
 
 
 
 
-### 7.2 Load Balanced Performance
+### 8.2 Load Balanced Performance
 
 
 
