@@ -31,6 +31,8 @@ public class RequestSender implements Runnable {
   // Backoff strategy for retries
   private final BackoffStrategy backoffStrategy;
 
+  private final HttpRequest.Builder requestTemplate;
+
   // Request throttling to avoid overwhelming the server
 
   public RequestSender(BlockingQueue<LiftRideEvent> queue, int requestCount, LongAdder successCount,
@@ -54,6 +56,11 @@ public class RequestSender implements Runnable {
             ClientConfig.MAX_BACKOFF_MS,
             ClientConfig.BACKOFF_MULTIPLIER
     );
+    this.requestTemplate = HttpRequest.newBuilder()
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS));
+
+
   }
 
   @Override
@@ -85,12 +92,16 @@ public class RequestSender implements Runnable {
             event.getDayId(),
             event.getSkierId());
 
-    HttpRequest request = HttpRequest.newBuilder()
+    HttpRequest request = requestTemplate.copy()
             .uri(URI.create(url))
-            .header("Content-Type", "application/json")
-            .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS))
             .POST(HttpRequest.BodyPublishers.ofString(json))
             .build();
+//    HttpRequest request = HttpRequest.newBuilder()
+//            .uri(URI.create(url))
+//            .header("Content-Type", "application/json")
+//            .timeout(Duration.ofSeconds(ClientConfig.REQUEST_TIMEOUT_SECONDS))
+//            .POST(HttpRequest.BodyPublishers.ofString(json))
+//            .build();
 
     // Reset backoff strategy
     backoffStrategy.reset();
